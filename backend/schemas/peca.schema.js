@@ -52,6 +52,11 @@ const listPecasQuerySchema = z
   .refine(
     (q) => q.valorMin === undefined || q.valorMax === undefined || q.valorMin <= q.valorMax,
     { message: 'O valor mínimo não pode ser maior que o valor máximo', path: ['valorMin'] }
+  )
+  // RFS02: é necessário preencher um dos filtros (categoria, faixa de valor ou vendedor)
+  .refine(
+    (q) => q.categoria !== undefined || q.valorMin !== undefined || q.valorMax !== undefined || q.vendedor !== undefined,
+    { message: 'Preencha ao menos um filtro: categoria, faixa de valor ou vendedor', path: ['categoria'] }
   );
 
 const pecaIdParamSchema = z.object({

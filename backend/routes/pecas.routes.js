@@ -24,9 +24,12 @@ const formatPeca = (item) => ({
   valor: Number(item.valor_pretendido),
   fotografias: item.fotografias || [],
   vendedor: { id: item.vendedor_id, nome: item.vendedor_nome },
+  proprietarioId: item.proprietario_id,
   publicacao: item.publicacao,
   statusPassaporte: item.status_passaporte,
+  passaporteId: item.passaporte_id,
   emNegociacao: item.em_negociacao,
+  vendida: item.vendida,
   criadoEm: item.criado_em,
   atualizadoEm: item.atualizado_em
 });
@@ -87,6 +90,18 @@ router.get('/minhas', authenticate, authorize('Vendedor'), async (req, res) => {
   res.json(data.map(formatPeca));
 });
 
+// GET /api/pecas/pendentes - Fila de anúncios aguardando validação do administrador (RFC02)
+router.get('/pendentes', authenticate, authorize('Administrador'), async (req, res) => {
+  const { data, error } = await req.db
+    .from('vw_pecas')
+    .select('*')
+    .eq('publicacao', 'pendente')
+    .order('nome', { ascending: true });
+  if (error) return handleDbError(res, error, 'Erro ao consultar anúncios pendentes');
+
+  res.json(data.map(formatPeca));
+});
+
 // GET /api/pecas - Consultar peças por categoria, faixa de valor e vendedor (RFS02)
 router.get(
   '/',
@@ -112,11 +127,11 @@ router.get(
   }
 );
 
-// GET /api/pecas/:id - Buscar peça específica
+// GET /api/pecas/:id - Buscar peça específica (Perito consulta as peças para emitir o passaporte)
 router.get(
   '/:id',
   authenticate,
-  authorize('Comprador', 'Administrador', 'Vendedor'),
+  authorize('Comprador', 'Administrador', 'Vendedor', 'Perito'),
   validate(pecaIdParamSchema, 'params'),
   async (req, res) => {
     const { data, error } = await fetchPeca(req.db, req.params.id);
@@ -176,6 +191,9 @@ router.put(
     if (fetchError) return handleDbError(res, fetchError, 'Erro ao buscar peça');
     if (!atual || atual.vendedor_id !== req.user.id) {
       return res.status(404).json({ message: 'Peça não encontrada' });
+    }
+    if (atual.vendida) {
+      return res.status(409).json({ message: 'A peça já foi vendida e não pode ser editada' });
     }
     if (atual.em_negociacao) {
       return res.status(409).json({ message: 'A peça está em negociação e não pode ser editada' });
@@ -244,6 +262,9 @@ router.delete(
     if (fetchError) return handleDbError(res, fetchError, 'Erro ao buscar peça');
     if (!atual || atual.vendedor_id !== req.user.id) {
       return res.status(404).json({ message: 'Peça não encontrada' });
+    }
+    if (atual.vendida) {
+      return res.status(409).json({ message: 'A peça já foi vendida e não pode ser removida' });
     }
     if (atual.em_negociacao) {
       return res.status(409).json({ message: 'A peça possui transação em andamento e não pode ser removida' });
