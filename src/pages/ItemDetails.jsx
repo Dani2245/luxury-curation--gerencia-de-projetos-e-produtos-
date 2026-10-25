@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ShieldCheck, ArrowLeft, Info } from 'lucide-react';
+import { ShieldCheck, ArrowLeft, FileText } from 'lucide-react';
+import ProposalBox from '../components/ProposalBox';
 import { apiFetch, formatCurrency, getUser } from '../services/api';
 
 const ItemDetails = () => {
@@ -9,18 +10,19 @@ const ItemDetails = () => {
   const [loading, setLoading] = useState(true);
   const user = getUser();
 
-  useEffect(() => {
-    const fetchItem = async () => {
-      try {
-        setItem(await apiFetch(`/pecas/${id}`));
-      } catch (error) {
-        console.error('Error fetching item:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchItem();
+  const fetchItem = useCallback(async () => {
+    try {
+      setItem(await apiFetch(`/pecas/${id}`));
+    } catch (error) {
+      console.error('Error fetching item:', error);
+    } finally {
+      setLoading(false);
+    }
   }, [id]);
+
+  useEffect(() => {
+    fetchItem();
+  }, [fetchItem]);
 
   if (loading) {
     return (
@@ -93,19 +95,35 @@ const ItemDetails = () => {
               </div>
               <div className="flex justify-between pb-2">
                 <span className="text-gray-500">Status do Passaporte</span>
-                <span className="text-emerald-400 uppercase tracking-widest text-xs font-medium">{item.statusPassaporte}</span>
+                <span data-testid="status-passaporte" className="text-emerald-400 uppercase tracking-widest text-xs font-medium">{item.statusPassaporte}</span>
               </div>
             </div>
+
+            <Link
+              to={`/peca/${item.id}/passaporte`}
+              className="mt-6 w-full flex items-center justify-center gap-2 bg-white text-black py-3 font-sans uppercase tracking-widest text-xs font-medium hover:bg-gray-200 transition-colors"
+            >
+              <FileText className="w-4 h-4" /> Visualizar Passaporte Completo
+            </Link>
+            {user?.perfil === 'Perito' && item.statusPassaporte === 'sem passaporte' && (
+              <Link
+                to={`/dashboard/passaportes/${item.id}/emitir`}
+                className="mt-3 w-full flex items-center justify-center border border-[#A69076] text-[#A69076] py-3 font-sans uppercase tracking-widest text-xs hover:bg-[#A69076] hover:text-black transition-colors"
+              >
+                Emitir passaporte
+              </Link>
+            )}
           </div>
 
-          <div className="flex gap-4">
-            <button type="button" disabled title="Disponível em breve" className="flex-1 bg-white text-black py-4 font-sans uppercase tracking-widest text-sm disabled:opacity-40">
-              Enviar Proposta
-            </button>
-            <button type="button" aria-label="Mais informações" className="px-6 border border-gray-600 hover:border-white transition-colors flex items-center justify-center">
-              <Info className="w-5 h-5 text-gray-400" />
-            </button>
-          </div>
+          {(item.emNegociacao || item.vendida) && user?.perfil !== 'Comprador' && user?.perfil !== 'Administrador' && (
+            <p data-testid="situacao-peca" className="text-yellow-400 font-sans text-sm border border-yellow-500/40 px-4 py-3">
+              {item.vendida ? 'Peça vendida.' : 'Peça em negociação.'}
+            </p>
+          )}
+
+          {(user?.perfil === 'Comprador' || user?.perfil === 'Administrador') && item.publicacao === 'publicada' && (
+            <ProposalBox key={`${item.id}-${item.emNegociacao}-${item.vendida}`} item={item} onRegistered={fetchItem} />
+          )}
         </div>
       </div>
     </div>

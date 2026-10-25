@@ -77,6 +77,7 @@ const SellerItemsPanel = () => {
                 <th scope="col" className="px-4 py-3">Categoria</th>
                 <th scope="col" className="px-4 py-3">Valor</th>
                 <th scope="col" className="px-4 py-3">Anúncio</th>
+                <th scope="col" className="px-4 py-3">Passaporte</th>
                 <th scope="col" className="px-4 py-3 text-right">Ações</th>
               </tr>
             </thead>
@@ -93,23 +94,27 @@ const SellerItemsPanel = () => {
                     <td className={`px-4 py-3 ${label.className}`}>
                       {label.text}
                       {item.emNegociacao && <span className="block text-xs text-gray-500">Em negociação</span>}
+                      {item.vendida && <span className="block text-xs text-gray-500">Vendida</span>}
+                    </td>
+                    <td className="px-4 py-3 text-gray-300">
+                      <Link to={`/peca/${item.id}/passaporte`} className="hover:text-[#A69076]">{item.statusPassaporte}</Link>
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex justify-end gap-3">
                         <Link
                           to={`/dashboard/peca/${item.id}/editar`}
                           aria-label={`Editar ${item.nome}`}
-                          title={item.emNegociacao ? 'Peça em negociação' : 'Editar'}
-                          className={`text-gray-400 hover:text-white ${item.emNegociacao ? 'pointer-events-none opacity-40' : ''}`}
+                          title={item.emNegociacao || item.vendida ? 'Peça em negociação ou vendida' : 'Editar'}
+                          className={`text-gray-400 hover:text-white ${item.emNegociacao || item.vendida ? 'pointer-events-none opacity-40' : ''}`}
                         >
                           <Pencil className="w-4 h-4" />
                         </Link>
                         <button
                           type="button"
                           onClick={() => handleDelete(item)}
-                          disabled={item.emNegociacao}
+                          disabled={item.emNegociacao || item.vendida}
                           aria-label={`Remover ${item.nome}`}
-                          title={item.emNegociacao ? 'Peça em negociação' : 'Remover'}
+                          title={item.emNegociacao || item.vendida ? 'Peça em negociação ou vendida' : 'Remover'}
                           className="text-gray-400 hover:text-red-400 disabled:opacity-40 disabled:pointer-events-none"
                         >
                           <Trash2 className="w-4 h-4" />

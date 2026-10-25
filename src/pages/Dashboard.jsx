@@ -1,8 +1,9 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Plus, LogOut, Users, Store } from 'lucide-react';
+import { Plus, LogOut, Users, Store, ArrowLeftRight } from 'lucide-react';
 import SellerItemsPanel from '../components/SellerItemsPanel';
 import AdminListingsPanel from '../components/AdminListingsPanel';
+import PassportQueuePanel from '../components/PassportQueuePanel';
 import { clearSession, getUser } from '../services/api';
 
 const TITULOS = {
@@ -46,6 +47,11 @@ const Dashboard = () => {
               <Users className="w-4 h-4" /> Usuários
             </Link>
           )}
+          {user.perfil !== 'Perito' && (
+            <Link to="/dashboard/transacoes" className={linkClass}>
+              <ArrowLeftRight className="w-4 h-4" /> Transações
+            </Link>
+          )}
           {(user.perfil === 'Administrador' || user.perfil === 'Comprador') && (
             <Link to="/catalogo" className={linkClass}>
               <Store className="w-4 h-4" /> Catálogo
@@ -68,9 +74,7 @@ const Dashboard = () => {
       {user.perfil === 'Comprador' && (
         <p className="text-gray-400 font-sans">Explore o catálogo para buscar peças com passaporte digital de autenticidade.</p>
       )}
-      {user.perfil === 'Perito' && (
-        <p className="text-gray-400 font-sans">Nenhuma funcionalidade disponível para o seu perfil nesta etapa.</p>
-      )}
+      {user.perfil === 'Perito' && <PassportQueuePanel />}
     </div>
   );
 };
