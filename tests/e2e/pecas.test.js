@@ -5,7 +5,7 @@ import webdriver from 'selenium-webdriver';
 import { USERS } from './helpers/config.js';
 import { deletePecasByName } from './helpers/api.js';
 import {
-  clearSession, clickButton, clickLabeled, createDriver, fill, loginAndWaitDashboard, open, select,
+  alertText, clearSession, clickButton, clickLabeled, createDriver, fill, loginAndWaitDashboard, open, select,
   tableRows, waitForPath, waitForText
 } from './helpers/browser.js';
 
@@ -24,10 +24,10 @@ const as = async (driver, user) => {
 
 const catalogNames = async (driver) => {
   await driver.wait(async () => (await driver.findElements(By.css('.animate-spin'))).length === 0, 10000);
-  const titles = await driver.findElements(By.css('h3'));
-  return Promise.all(titles.map((title) => title.getText()));
+  return driver.executeScript('return [...document.querySelectorAll("main h3")].map((title) => title.textContent)');
 };
 
+// Preenche os filtros e consulta; o resultado é lido depois que a busca termina
 const searchCatalog = async (driver, filters = {}) => {
   await open(driver, '/catalogo');
   await driver.wait(until.elementLocated(By.id('f-categoria')), 10000);
@@ -120,7 +120,7 @@ describe('RFC02 - Manter Peças', function () {
       const card = await driver.findElement(By.css('a[href^="/peca/"]'));
       const text = await card.getText();
       assert.match(text, new RegExp(USERS.vendedor.nome));
-      assert.match(text, /em revisão/i);
+      assert.match(text, /sem passaporte/i);
     });
   });
 
@@ -148,8 +148,19 @@ describe('RFC02 - Manter Peças', function () {
       await waitForText(driver, 'Nenhuma peça encontrada');
     });
 
+    it('exige o preenchimento de ao menos um filtro', async () => {
+      await open(driver, '/catalogo');
+      await waitForText(driver, 'Informe ao menos um filtro');
+      assert.deepEqual(await catalogNames(driver), []);
+
+      await clickButton(driver, 'Buscar');
+      assert.equal(await alertText(driver), 'Preencha ao menos um filtro: categoria, faixa de valor ou vendedor');
+      assert.deepEqual(await catalogNames(driver), []);
+    });
+
     it('lista as peças em ordem alfabética pelo nome', async () => {
-      const names = await searchCatalog(driver);
+      const names = await searchCatalog(driver, { vendedor: 'rafael' });
+      assert.ok(names.length >= 3, 'deve haver ao menos 3 peças para comparar a ordem');
       const sorted = [...names].sort((a, b) => a.localeCompare(b, 'pt-BR'));
       assert.deepEqual(names, sorted);
     });

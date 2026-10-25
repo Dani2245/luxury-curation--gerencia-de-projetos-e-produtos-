@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import webdriver from 'selenium-webdriver';
 import { USERS } from './helpers/config.js';
 import {
-  alertText, clearSession, clickButton, clickLabeled, createDriver, fill, loginAndWaitDashboard, loginAs,
+  alertText, clearSession, clickButton, clickLabeled, createDriver, loginAndWaitDashboard, loginAs,
   open, waitForPath, waitForText
 } from './helpers/browser.js';
 
