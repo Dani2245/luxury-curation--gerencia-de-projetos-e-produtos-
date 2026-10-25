@@ -5,6 +5,7 @@ require('dotenv').config();
 const pecasRoutes = require('./routes/pecas.routes');
 const authRoutes = require('./routes/auth.routes');
 const usuariosRoutes = require('./routes/usuarios.routes');
+const passaportesRoutes = require('./routes/passaportes.routes');
 
 const app = express();
 
@@ -24,6 +25,7 @@ app.get('/api/health', (req, res) => {
 // Rotas da Aplicação
 app.use('/api/pecas', pecasRoutes);
 app.use('/api/usuarios', usuariosRoutes);
+app.use('/api/passaportes', passaportesRoutes);
 app.use('/api', authRoutes);
 
 // Middleware para tratamento de 404
@@ -34,11 +36,12 @@ app.use((req, res) => {
 // Middleware Global de Tratamento de Erros
 app.use((err, req, res, next) => {
   if (err.name === 'MulterError') {
-    const message = err.code === 'LIMIT_FILE_SIZE'
-      ? 'Cada fotografia deve ter no máximo 5 MB'
-      : err.code === 'LIMIT_FILE_COUNT' || err.code === 'LIMIT_UNEXPECTED_FILE'
-        ? 'Envie no máximo 10 fotografias'
-        : 'Erro no envio das fotografias';
+    const documentos = req.baseUrl.startsWith('/api/passaportes');
+    const limite = err.code === 'LIMIT_FILE_SIZE';
+    const quantidade = err.code === 'LIMIT_FILE_COUNT' || err.code === 'LIMIT_UNEXPECTED_FILE';
+    const message = documentos
+      ? limite ? 'Cada documento deve ter no máximo 10 MB' : quantidade ? 'Envie no máximo 5 arquivos por tipo de documento' : 'Erro no envio dos documentos'
+      : limite ? 'Cada fotografia deve ter no máximo 5 MB' : quantidade ? 'Envie no máximo 10 fotografias' : 'Erro no envio das fotografias';
     return res.status(400).json({ message });
   }
   if (err.status === 400) {
