@@ -8,7 +8,7 @@ const { ZodError } = require('zod');
 const validate = (schema, source = 'body') => {
   return async (req, res, next) => {
     try {
-      const validatedData = await schema.parseAsync(req[source]);
+      const validatedData = await schema.parseAsync(req[source] ?? {});
       // No Express 5, req.query e req.params são somente leitura
       Object.defineProperty(req, source, { value: validatedData, writable: true, configurable: true, enumerable: true });
       next();
