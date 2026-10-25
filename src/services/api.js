@@ -70,3 +70,8 @@ export const apiFetch = async (path, { method = 'GET', body, formData, params } 
 
 export const formatCurrency = (value) =>
   new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+
+export const formatDate = (value) => (value ? new Date(value).toLocaleDateString('pt-BR') : '—');
+
+export const formatDateTime = (value) =>
+  value ? new Date(value).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) : '—';
