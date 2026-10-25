@@ -21,6 +21,14 @@ const ItemCard = ({ item }) => {
           </div>
         )}
 
+        {(item.vendida || item.emNegociacao) && (
+          <div className="absolute top-4 right-4 bg-black/60 backdrop-blur-md px-3 py-1.5 border border-white/10">
+            <span className="text-xs tracking-widest uppercase font-sans font-medium text-yellow-300">
+              {item.vendida ? 'Vendida' : 'Em negociação'}
+            </span>
+          </div>
+        )}
+
         {/* Passaporte Digital Badge */}
         {item.statusPassaporte === 'valido' && (
           <div className="absolute top-4 left-4 bg-black/50 backdrop-blur-md px-3 py-1.5 flex items-center gap-2 border border-white/10">
