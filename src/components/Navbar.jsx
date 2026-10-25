@@ -1,7 +1,16 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { getUser } from '../services/api';
 
 const Navbar = () => {
+  const [user, setUser] = useState(getUser());
+
+  useEffect(() => {
+    const sync = () => setUser(getUser());
+    window.addEventListener('session-changed', sync);
+    return () => window.removeEventListener('session-changed', sync);
+  }, []);
+
   return (
     <nav className="bg-[#0a0a0a]/95 backdrop-blur-md border-b-[0.5px] border-[#A69076]/40 fixed w-full z-50 top-0">
       <div className="container mx-auto flex justify-between items-center px-4 md:px-8 py-3 md:py-4">
@@ -36,8 +45,8 @@ const Navbar = () => {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
             </svg>
           </button>
-          <Link to="/login" className="border border-[#A69076] text-[#A69076] px-4 py-1.5 md:px-6 md:py-2 text-xs md:text-sm hover:bg-[#A69076] hover:text-black transition-colors duration-300">
-            ACESSO PRIVADO
+          <Link to={user ? '/dashboard' : '/login'} className="border border-[#A69076] text-[#A69076] px-4 py-1.5 md:px-6 md:py-2 text-xs md:text-sm hover:bg-[#A69076] hover:text-black transition-colors duration-300">
+            {user ? 'MEU PAINEL' : 'ACESSO PRIVADO'}
           </Link>
           
           {/* Mobile Menu Button */}
