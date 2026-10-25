@@ -10,7 +10,7 @@ const AdminListingsPanel = () => {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    apiFetch('/pecas', { params: { publicacao: 'pendente' } })
+    apiFetch('/pecas/pendentes')
       .then(setItems)
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import ItemCard from '../components/ItemCard';
 import { apiFetch, getUser } from '../services/api';
 
@@ -10,7 +10,8 @@ const Catalog = () => {
   const isAdmin = getUser()?.perfil === 'Administrador';
   const [items, setItems] = useState([]);
   const [filters, setFilters] = useState({ categoria: '', valorMin: '', valorMax: '', vendedor: '', publicacao: '' });
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [searched, setSearched] = useState(false);
   const [error, setError] = useState('');
   const lastRequest = useRef(0);
 
@@ -31,19 +32,26 @@ const Catalog = () => {
     }
   }, []);
 
-  useEffect(() => {
-    fetchItems({});
-  }, [fetchItems]);
-
   const handleSubmit = (e) => {
     e.preventDefault();
+    // RFS02: é necessário preencher um dos filtros (categoria, faixa de valor ou vendedor)
+    if (!filters.categoria && !filters.valorMin && !filters.valorMax && !filters.vendedor.trim()) {
+      setItems([]);
+      setSearched(false);
+      setError('Preencha ao menos um filtro: categoria, faixa de valor ou vendedor');
+      return;
+    }
+    setSearched(true);
     fetchItems(filters);
   };
 
   const handleClear = () => {
-    const cleared = { categoria: '', valorMin: '', valorMax: '', vendedor: '', publicacao: '' };
-    setFilters(cleared);
-    fetchItems({});
+    lastRequest.current += 1;
+    setFilters({ categoria: '', valorMin: '', valorMax: '', vendedor: '', publicacao: '' });
+    setItems([]);
+    setSearched(false);
+    setLoading(false);
+    setError('');
   };
 
   return (
@@ -109,6 +117,8 @@ const Catalog = () => {
         <div className="flex justify-center items-center h-64">
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-white"></div>
         </div>
+      ) : !searched && !error ? (
+        <p className="text-center text-gray-500 font-sans py-16">Informe ao menos um filtro (categoria, faixa de valor ou vendedor) para consultar as peças.</p>
       ) : items.length === 0 && !error ? (
         <p className="text-center text-gray-500 font-sans py-16">Nenhuma peça encontrada para os filtros informados.</p>
       ) : (
