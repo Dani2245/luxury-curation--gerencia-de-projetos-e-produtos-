@@ -6,6 +6,7 @@ const pecasRoutes = require('./routes/pecas.routes');
 const authRoutes = require('./routes/auth.routes');
 const usuariosRoutes = require('./routes/usuarios.routes');
 const passaportesRoutes = require('./routes/passaportes.routes');
+const transacoesRoutes = require('./routes/transacoes.routes');
 
 const app = express();
 
@@ -26,6 +27,7 @@ app.get('/api/health', (req, res) => {
 app.use('/api/pecas', pecasRoutes);
 app.use('/api/usuarios', usuariosRoutes);
 app.use('/api/passaportes', passaportesRoutes);
+app.use('/api/transacoes', transacoesRoutes);
 app.use('/api', authRoutes);
 
 // Middleware para tratamento de 404
