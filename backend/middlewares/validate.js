@@ -8,14 +8,15 @@ const { ZodError } = require('zod');
 const validate = (schema, source = 'body') => {
   return async (req, res, next) => {
     try {
-      const validatedData = await schema.parseAsync(req[source]);
-      req[source] = validatedData;
+      const validatedData = await schema.parseAsync(req[source] ?? {});
+      // No Express 5, req.query e req.params são somente leitura
+      Object.defineProperty(req, source, { value: validatedData, writable: true, configurable: true, enumerable: true });
       next();
     } catch (err) {
       if (err instanceof ZodError) {
         const issues = err.issues || err.errors || [];
         return res.status(400).json({
-          message: 'Erro de validação',
+          message: issues[0]?.message || 'Erro de validação',
           errors: issues.map((issue) => ({
             field: issue.path.join('.') || source,
             message: issue.message

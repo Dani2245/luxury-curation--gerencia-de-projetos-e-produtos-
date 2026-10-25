@@ -1,83 +1,46 @@
 const express = require('express');
 const router = express.Router();
-const supabase = require('../config/supabase');
+const { supabase, createUserClient } = require('../config/supabase');
 const validate = require('../middlewares/validate');
+const { authenticate } = require('../middlewares/auth');
 const { loginSchema } = require('../schemas/auth.schema');
 
-// POST /api/login - Autenticação com validação Zod e integração Supabase Auth
+// POST /api/login - Autenticação com e-mail e senha via Supabase Auth
 router.post('/login', validate(loginSchema), async (req, res) => {
+  if (!supabase) {
+    return res.status(500).json({ message: 'Supabase não está configurado no .env' });
+  }
+
   const { email, password } = req.body;
 
   try {
-    // Se Supabase estiver conectado, tenta autenticar no Supabase Auth
-    if (supabase) {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password
-      });
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
-      if (!error && data?.session) {
-        return res.json({
-          token: data.session.access_token,
-          user: {
-            id: data.user.id,
-            name: data.user.user_metadata?.name || email.split('@')[0],
-            email: data.user.email,
-            role: data.user.user_metadata?.role || 'Vendedor'
-          }
-        });
-      }
-
-      console.warn('[Supabase Auth Warning]:', error?.message);
+    if (error || !data?.session) {
+      return res.status(401).json({ message: 'E-mail ou senha inválidos' });
     }
 
-    // Modo fallback de desenvolvimento (para testes locais rápidos)
-    return res.json({
-      token: 'mock-jwt-token-luxury-curation',
-      user: {
-        id: '1',
-        name: email.split('@')[0].toUpperCase(),
-        email: email,
-        role: 'Vendedor'
-      }
-    });
+    const token = data.session.access_token;
+    const { data: perfil, error: perfilError } = await createUserClient(token)
+      .from('perfis')
+      .select('id, nome, email, perfil')
+      .eq('id', data.user.id)
+      .maybeSingle();
+
+    if (perfilError || !perfil) {
+      return res.status(403).json({ message: 'Usuário sem perfil de acesso cadastrado' });
+    }
+
+    res.json({ token, expiresAt: data.session.expires_at, user: perfil });
   } catch (err) {
     console.error('Erro na rota de login:', err);
     res.status(500).json({ message: 'Erro interno ao realizar login' });
   }
 });
 
-// POST /api/register - Criação de usuário no Supabase Auth (opcional)
-router.post('/register', validate(loginSchema), async (req, res) => {
-  const { email, password } = req.body;
-
-  if (!supabase) {
-    return res.status(400).json({ message: 'Supabase não está configurado no .env' });
-  }
-
-  try {
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          role: 'Vendedor'
-        }
-      }
-    });
-
-    if (error) {
-      return res.status(400).json({ message: error.message });
-    }
-
-    res.status(201).json({
-      message: 'Usuário registrado com sucesso!',
-      user: data.user
-    });
-  } catch (err) {
-    console.error('Erro ao registrar usuário:', err);
-    res.status(500).json({ message: 'Erro interno ao cadastrar usuário' });
-  }
+// GET /api/me - Dados do usuário autenticado
+router.get('/me', authenticate, (req, res) => {
+  res.json({ user: req.user });
 });
 
 module.exports = router;
