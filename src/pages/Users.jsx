@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, Pencil, Plus, Trash2 } from 'lucide-react';
 import { apiFetch, getUser } from '../services/api';
@@ -22,15 +22,20 @@ const Users = () => {
   const [formError, setFormError] = useState('');
   const [saving, setSaving] = useState(false);
 
+  const lastRequest = useRef(0);
+
+  // Ignora respostas de consultas antigas que chegam depois da mais recente
   const loadUsers = useCallback(async (params) => {
+    const requestId = ++lastRequest.current;
     setLoading(true);
     setError('');
     try {
-      setUsers(await apiFetch('/usuarios', { params }));
+      const data = await apiFetch('/usuarios', { params });
+      if (requestId === lastRequest.current) setUsers(data);
     } catch (err) {
-      setError(err.message);
+      if (requestId === lastRequest.current) setError(err.message);
     } finally {
-      setLoading(false);
+      if (requestId === lastRequest.current) setLoading(false);
     }
   }, []);
 

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import ItemCard from '../components/ItemCard';
 import { apiFetch, getUser } from '../services/api';
 
@@ -12,16 +12,22 @@ const Catalog = () => {
   const [filters, setFilters] = useState({ categoria: '', valorMin: '', valorMax: '', vendedor: '', publicacao: '' });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const lastRequest = useRef(0);
+
+  // Ignora respostas de buscas antigas que chegam depois da mais recente
   const fetchItems = useCallback(async (params) => {
+    const requestId = ++lastRequest.current;
     setLoading(true);
     setError('');
     try {
-      setItems(await apiFetch('/pecas', { params }));
+      const data = await apiFetch('/pecas', { params });
+      if (requestId === lastRequest.current) setItems(data);
     } catch (err) {
+      if (requestId !== lastRequest.current) return;
       setItems([]);
       setError(err.message);
     } finally {
-      setLoading(false);
+      if (requestId === lastRequest.current) setLoading(false);
     }
   }, []);
 
