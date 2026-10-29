@@ -30,9 +30,10 @@ A luxurious, high-end web application for curating rare art, iconic objects, and
    - `schema-rfc22-rfc21.sql` (listas e alertas);
    - `schema-rfc06.sql` (custódia);
    - `schema-financeiro.sql` (relatórios e contas);
-   - `schema-rfc12-rfc13.sql` (entrega e pagamento retido simulado).
+   - `schema-rfc12-rfc13.sql` (entrega e pagamento retido simulado);
+   - `schema-rfc12-rfc13-prazos.sql` (prazos da conferência e da disputa, consulta e exclusão de pagamentos retidos).
 
-   Em um projeto existente que já recebeu as migrações de listas e alertas, aplique apenas os três últimos scripts. Eles são aditivos e podem ser reaplicados. Não recrie o banco nem reaplique o seed para atualizar o projeto. Vendas históricas confirmadas continuam concluídas; a migração não inventa pagamentos ou lançamentos financeiros retroativos.
+   Em um projeto existente que já recebeu as migrações de listas e alertas, aplique apenas os quatro últimos scripts; se já recebeu o `schema-rfc12-rfc13.sql`, aplique só o `schema-rfc12-rfc13-prazos.sql`. Eles são aditivos e podem ser reaplicados. Não recrie o banco nem reaplique o seed para atualizar o projeto. Vendas históricas confirmadas continuam concluídas; a migração não inventa pagamentos ou lançamentos financeiros retroativos.
 3. Inicie a API e o frontend:
    ```bash
    # Terminal 1, dentro de backend/
@@ -63,7 +64,7 @@ npx mocha tests/e2e/links.test.js
 ```
 
 - Configurável por `E2E_BASE_URL` (padrão `http://localhost:5173`), `E2E_API_URL` (padrão `http://localhost:3000`) e `E2E_HEADLESS=false` para ver o navegador.
-- As suítes cobrem RFC01 a RFC04, RFC06, RFC07, RF01, RF02, RFC11 a RFC13, RFC16, RFC21, RFC22 e RNF06 e criam os próprios dados (peças com prefixo `E2E `).
+- As suítes cobrem RFC01 a RFC04, RFC06, RFC07, RF01, RF02, RFC11 a RFC13 (inclusive os prazos da conferência e da disputa), RFC16, RFC21, RFC22 e RNF06 e criam os próprios dados (peças com prefixo `E2E `). A função `e2e_ajustar_prazo`, também do `test-support.sql`, antecipa prazos de transações de teste para demonstrar prazos próximos e vencidos.
 - Para apagar esses dados ao final (peças vendidas não podem ser removidas pela aplicação), execute a versão atual de `backend/database/test-support.sql` no ambiente de testes, inclusive se já instalou uma versão anterior. Ela inclui a limpeza das novas entidades, restrita aos dados de teste. **Não use esse arquivo em produção.** As suítes devem rodar sequencialmente, sem outra execução simultânea no mesmo banco.
 
 ## Regras de negócio implementadas
@@ -84,6 +85,7 @@ npx mocha tests/e2e/links.test.js
 | RF01 | Administrador → **Relatórios e financeiro** → Transações por categoria: período, categoria, situação, subtotais e total geral | `tests/e2e/relatorios.test.js` |
 | RF02 / RFC11 | Na mesma tela, **Financeiro**: receitas/despesas por competência e categoria, contas a pagar/receber, liquidação e cancelamento com justificativa | `tests/e2e/relatorios.test.js` |
 | RFC12 / RFC13 | **Transações**: envio pelo vendedor, recebimento e conferência pelo comprador, retenção/liberação/estorno simulado e decisão do administrador | `tests/e2e/entregas.test.js` |
+| RFC12 / RFC13 (RFS37–39, RFS42, RFS44) | **Transações**: prazo de conferência declarado no aceite, prazo de 5 dias para a decisão da disputa, destaque e filtro dos prazos próximos, estado observado e exclusão da retenção registrada por erro. **Relatórios e financeiro → Financeiro**: pagamentos simulados por status e período | `tests/e2e/prazos.test.js` |
 
 Regras detalhadas para revisão do grupo:
 
@@ -91,7 +93,9 @@ Regras detalhadas para revisão do grupo:
 - **Relatórios:** o RF01 usa a data da proposta no horário de Brasília, incluindo os dois extremos do período. O total soma as situações selecionadas e exibe separadamente as vendas concluídas. O financeiro usa a competência do lançamento; contas em aberto são a pagar/receber, liquidadas são pagas/recebidas e canceladas ficam no histórico, fora dos totais. O saldo realizado é recebido menos pago para as competências selecionadas.
 - **Receitas e despesas:** a comissão de uma venda nova é lançada automaticamente uma única vez na conclusão, já liquidada. Taxas de emissão/manutenção de passaporte e despesas com peritos, parceiros e operação são lançadas manualmente pelo administrador. Não há cobrança automática por emissão de passaporte. O valor integral da compra, o dinheiro retido e os repasses pertencem aos participantes e são apresentados separadamente da receita da Lastro.
 - **Entrega e contestação:** o comprador só pode conferir após registrar recebimento. Uma contestação exige motivo e mantém o pagamento retido. O administrador informa a justificativa e decide liberar (concluir venda e transferir) ou estornar (cancelar e devolver a disponibilidade, mantendo o proprietário). A decisão de estorno pressupõe a resolução operacional da devolução; não há integração com transportadora.
-- **Limites acordados para RFC12/RFC13:** o PDF disponibilizado não detalha esses dois requisitos; o fluxo acima foi aprovado pelo responsável pela implementação nesta entrega. Pagamento e estorno são simulações, sem gateway ou movimentação de dinheiro. Não existe liberação automática por prazo, nem cancelamento automático após pagamento. Esses critérios precisam constar no DRE que o grupo apresentar.
+- **Prazos (RFS37 a RFS39):** ao aceitar a proposta, o vendedor declara o prazo de conferência, de 1 a 30 dias (padrão de 7, parâmetro `prazo_conferencia_dias`), que conta a partir do recebimento. A contestação só é aceita dentro desse prazo; a aprovação continua possível depois dele. A contestação abre o prazo de decisão do administrador, de 5 dias (parâmetro `prazo_disputa_dias`). Conferências e disputas com menos de 2 dias para o fim do prazo aparecem como "Perto da data limite", e as vencidas, como "Prazo vencido"; o filtro "Perto da data limite" lista as duas situações, ordenadas pelo prazo mais curto. Vencido o prazo de conferência sem resposta do comprador, o administrador pode liberar o pagamento com justificativa. Ao contestar, o comprador pode registrar o estado observado da peça.
+- **Pagamentos retidos (RFS42 e RFS44):** cada parte vê na transação o status do seu pagamento. O administrador filtra os pagamentos por status (retido, liberado, estornado) e pela data da retenção. Uma retenção registrada por erro pode ser excluída pelo administrador, com motivo, antes do envio da peça e sem liberação nem devolução; a transação volta a aguardar o pagamento e a exclusão fica no histórico.
+- **Limites para RFC12/RFC13:** pagamento e estorno são simulações, sem gateway ou movimentação de dinheiro (seção 1.2 do DRE). Não existe liberação automática por prazo, nem cancelamento automático após pagamento: o vencimento é sinalizado e a decisão é do administrador. As fotografias da conferência citadas nos atributos do RFS37 a RFS40 não foram incluídas nesta versão. A conferência só existe depois do recebimento e uma transação só pode ser cancelada antes do pagamento, por isso não há conferência a excluir (RFS40).
 - **Integridade:** as transições são autorizadas também no banco, bloqueiam alterações fora de ordem e usam transações/bloqueios para evitar pagamento, comissão ou transferência duplicados. Histórico, custódia e contas não aceitam gravação direta pelo cliente. A aprovação da entrega mantém a integração existente de transferência do passaporte e revogação dos links do dono anterior.
 
 Para demonstrar somente esta entrega, com os dois servidores ligados:
@@ -103,7 +107,7 @@ npm run test:e2e:essenciais
 
 Também é possível executar cada arquivo da tabela com `npx mocha <arquivo>`. A suíte `transacoes.test.js` foi adaptada para validar a integração do RFC04 com a nova conferência.
 
-Validação em 29/10/2026: **162 testes passando** na suíte completa (128 anteriores adaptados + 34 novos; aproximadamente 13 minutos), com Chrome e Supabase de desenvolvimento. `npm run build` passou. `npm run lint` terminou sem erros, com dois avisos preexistentes de símbolos não usados (`next` em `backend/server.js` e `History` em `DigitalPassportDemo.jsx`).
+Validação em 29/10/2026: **175 testes passando** na suíte completa (162 da entrega de custódia, financeiro e entrega + 13 dos prazos e pagamentos retidos; aproximadamente 18 minutos), com Chrome e Supabase de desenvolvimento. `npm run build` passou. `npm run lint` terminou sem erros, com dois avisos preexistentes de símbolos não usados (`next` em `backend/server.js` e `History` em `DigitalPassportDemo.jsx`).
 
 Roteiro manual: registrar uma custódia e movimentá-la; criar uma proposta de compra; entrar como vendedor para aceitar; como comprador para pagar; como vendedor para registrar envio; como comprador para receber e aprovar. Por fim, entrar como administrador e conferir a venda agrupada, a comissão financeira e o histórico. Uma segunda transação permite demonstrar contestação e estorno.
 
