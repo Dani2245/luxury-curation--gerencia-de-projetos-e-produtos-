@@ -1,10 +1,14 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Plus, LogOut, Users, Store, ArrowLeftRight } from 'lucide-react';
+import { Plus, LogOut, Users, Store, ArrowLeftRight, Bell } from 'lucide-react';
 import SellerItemsPanel from '../components/SellerItemsPanel';
 import AdminListingsPanel from '../components/AdminListingsPanel';
 import PassportQueuePanel from '../components/PassportQueuePanel';
 import UsageEventsPanel from '../components/UsageEventsPanel';
+import NotificationsPanel from '../components/NotificationsPanel';
+import WishlistsPanel from '../components/WishlistsPanel';
+import WishlistDemandPanel from '../components/WishlistDemandPanel';
+import AlertStatsPanel from '../components/AlertStatsPanel';
 import { clearSession, getUser } from '../services/api';
 
 const TITULOS = {
@@ -58,6 +62,11 @@ const Dashboard = () => {
               <Store className="w-4 h-4" /> Catálogo
             </Link>
           )}
+          {(user.perfil === 'Comprador' || user.perfil === 'Vendedor') && (
+            <Link to="/dashboard/alertas" className={linkClass}>
+              <Bell className="w-4 h-4" /> Alertas
+            </Link>
+          )}
           <button
             type="button"
             onClick={handleLogout}
@@ -70,15 +79,21 @@ const Dashboard = () => {
         </div>
       </div>
 
+      {(user.perfil === 'Comprador' || user.perfil === 'Vendedor') && <NotificationsPanel />}
       {user.perfil === 'Vendedor' && <SellerItemsPanel />}
       {user.perfil === 'Administrador' && (
         <>
           <AdminListingsPanel />
           <UsageEventsPanel />
+          <WishlistDemandPanel />
+          <AlertStatsPanel />
         </>
       )}
       {user.perfil === 'Comprador' && (
-        <p className="text-gray-400 font-sans">Explore o catálogo para buscar peças com passaporte digital de autenticidade.</p>
+        <>
+          <p className="text-gray-400 font-sans">Explore o catálogo para buscar peças com passaporte digital de autenticidade.</p>
+          <WishlistsPanel />
+        </>
       )}
       {user.perfil === 'Perito' && <PassportQueuePanel />}
     </div>

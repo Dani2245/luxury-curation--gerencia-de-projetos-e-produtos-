@@ -14,6 +14,8 @@ import Passport from './pages/Passport';
 import IssuePassport from './pages/IssuePassport';
 import Transactions from './pages/Transactions';
 import PublicPassport from './pages/PublicPassport';
+import Wishlist from './pages/Wishlist';
+import Alerts from './pages/Alerts';
 import ProtectedRoute from './components/ProtectedRoute';
 
 const App = () => {
@@ -34,6 +36,8 @@ const App = () => {
           <Route path="/dashboard/peca/:id/editar" element={<ProtectedRoute roles={['Vendedor']}><EditItem /></ProtectedRoute>} />
           <Route path="/dashboard/passaportes/:pecaId/emitir" element={<ProtectedRoute roles={['Perito']}><IssuePassport /></ProtectedRoute>} />
           <Route path="/dashboard/transacoes" element={<ProtectedRoute roles={['Comprador', 'Vendedor', 'Administrador']}><Transactions /></ProtectedRoute>} />
+          <Route path="/dashboard/listas/:id" element={<ProtectedRoute roles={['Comprador']}><Wishlist /></ProtectedRoute>} />
+          <Route path="/dashboard/alertas" element={<ProtectedRoute roles={['Comprador', 'Vendedor']}><Alerts /></ProtectedRoute>} />
           <Route path="/dashboard/usuarios" element={<ProtectedRoute roles={['Administrador']}><Users /></ProtectedRoute>} />
         </Routes>
       </main>

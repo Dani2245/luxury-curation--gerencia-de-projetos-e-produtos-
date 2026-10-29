@@ -17,7 +17,18 @@ const ROTULOS = {
   anuncio_rejeitado: 'Anúncios recusados pela curadoria',
   transacao_proposta: 'Propostas de compra',
   transacao_confirmada: 'Vendas confirmadas',
-  transacao_cancelada: 'Transações canceladas'
+  transacao_cancelada: 'Transações canceladas',
+  lista_desejos_criada: 'Listas de desejos criadas',
+  lista_desejos_editada: 'Listas de desejos alteradas',
+  lista_desejos_removida: 'Listas de desejos excluídas',
+  peca_salva: 'Peças salvas em listas de desejos',
+  alerta_criado: 'Alertas configurados',
+  alerta_editado: 'Alertas alterados',
+  alerta_desativado: 'Alertas desligados',
+  alerta_reativado: 'Alertas religados',
+  alerta_removido: 'Alertas excluídos',
+  alerta_enviado: 'Alertas enviados na plataforma',
+  alerta_aberto: 'Alertas abertos pelo usuário'
 };
 
 const inputClass = 'w-full bg-[#0a0a0a] border border-gray-700 px-4 py-2.5 text-white focus:outline-none focus:border-[#A69076] transition-colors font-sans';
