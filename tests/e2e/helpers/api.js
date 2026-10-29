@@ -153,3 +153,14 @@ export const cleanupE2E = async (prefix = 'E2E ') => {
   });
   if (!result.ok) throw new Error(`Limpeza E2E falhou (${result.status}). Execute backend/database/test-support.sql no ambiente de testes.`);
 };
+
+// Antecipa o prazo em aberto (conferência ou decisão da disputa) de uma transação de teste: horas a partir de agora
+export const adjustDeadlineApi = async (transacaoId, horas) => {
+  const token = await loginApi(USERS.admin.email);
+  const result = await fetch(`${SUPABASE_URL}/rest/v1/rpc/e2e_ajustar_prazo`, {
+    method: 'POST',
+    headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ p_transacao: transacaoId, p_horas: horas })
+  });
+  if (!result.ok) throw new Error(`Ajuste de prazo falhou (${result.status}). Execute backend/database/test-support.sql no ambiente de testes.`);
+};

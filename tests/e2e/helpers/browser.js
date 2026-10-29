@@ -45,11 +45,19 @@ export const clickLabeled = async (driver, label) => {
 
 // Substitui o conteúdo de um campo (inclui type=number)
 export const fill = async (driver, id, value) => {
-  const field = await driver.wait(until.elementLocated(By.id(id)), TIMEOUT);
-  await driver.executeScript('arguments[0].scrollIntoView({block: "center"})', field);
-  // clear() não dispara o evento de input que o React observa; apagar pelo teclado dispara
-  await field.sendKeys(Key.chord(process.platform === 'darwin' ? Key.COMMAND : Key.CONTROL, 'a'), Key.BACK_SPACE);
-  if (value !== '') await field.sendKeys(value);
+  // o React pode redesenhar o campo entre a busca e a digitação: busca de novo e repete
+  for (let tentativa = 1; ; tentativa++) {
+    try {
+      const field = await driver.wait(until.elementLocated(By.id(id)), TIMEOUT);
+      await driver.executeScript('arguments[0].scrollIntoView({block: "center"})', field);
+      // clear() não dispara o evento de input que o React observa; apagar pelo teclado dispara
+      await field.sendKeys(Key.chord(process.platform === 'darwin' ? Key.COMMAND : Key.CONTROL, 'a'), Key.BACK_SPACE);
+      if (value !== '') await field.sendKeys(value);
+      return;
+    } catch (err) {
+      if (err.name !== 'StaleElementReferenceError' || tentativa === 3) throw err;
+    }
+  }
 };
 
 export const select = async (driver, id, value) => {
