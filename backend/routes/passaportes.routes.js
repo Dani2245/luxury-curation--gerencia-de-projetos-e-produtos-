@@ -134,6 +134,11 @@ router.get(
     const emissao = assinaturas[0];
     const ultima = assinaturas[assinaturas.length - 1];
 
+    // RNF06: consulta ao passaporte (alimenta a North Star); falhar aqui não impede a consulta
+    const origem = typeof req.query.origem === 'string' ? req.query.origem : null;
+    const { error: eventoError } = await db.rpc('registrar_consulta_passaporte', { p_passaporte_id: passaporte.id, p_origem: origem });
+    if (eventoError) console.warn('[Eventos de uso] Falha ao registrar a consulta:', eventoError.message);
+
     res.json({
       id: passaporte.id,
       peca: { id: peca.id, nome: peca.nome, categoria: peca.categoria, vendida: peca.vendida },

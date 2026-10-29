@@ -11,7 +11,7 @@ router.post('/login', validate(loginSchema), async (req, res) => {
     return res.status(500).json({ message: 'Supabase não está configurado no .env' });
   }
 
-  const { email, password } = req.body;
+  const { email, password, origem } = req.body;
 
   try {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
@@ -21,7 +21,8 @@ router.post('/login', validate(loginSchema), async (req, res) => {
     }
 
     const token = data.session.access_token;
-    const { data: perfil, error: perfilError } = await createUserClient(token)
+    const db = createUserClient(token);
+    const { data: perfil, error: perfilError } = await db
       .from('perfis')
       .select('id, nome, email, perfil')
       .eq('id', data.user.id)
@@ -30,6 +31,10 @@ router.post('/login', validate(loginSchema), async (req, res) => {
     if (perfilError || !perfil) {
       return res.status(403).json({ message: 'Usuário sem perfil de acesso cadastrado' });
     }
+
+    // RNF06: sessão iniciada, com a origem e a indicação de gatilho externo; falhar aqui não impede o login
+    const { error: eventoError } = await db.rpc('registrar_sessao', { p_origem: origem ?? null });
+    if (eventoError) console.warn('[Eventos de uso] Falha ao registrar a sessão:', eventoError.message);
 
     res.json({ token, expiresAt: data.session.expires_at, user: perfil });
   } catch (err) {

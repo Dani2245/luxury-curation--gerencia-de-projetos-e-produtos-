@@ -7,6 +7,9 @@ const authRoutes = require('./routes/auth.routes');
 const usuariosRoutes = require('./routes/usuarios.routes');
 const passaportesRoutes = require('./routes/passaportes.routes');
 const transacoesRoutes = require('./routes/transacoes.routes');
+const linksRoutes = require('./routes/links.routes');
+const publicoRoutes = require('./routes/publico.routes');
+const eventosRoutes = require('./routes/eventos.routes');
 
 const app = express();
 
@@ -28,6 +31,9 @@ app.use('/api/pecas', pecasRoutes);
 app.use('/api/usuarios', usuariosRoutes);
 app.use('/api/passaportes', passaportesRoutes);
 app.use('/api/transacoes', transacoesRoutes);
+app.use('/api/links', linksRoutes);
+app.use('/api/publico', publicoRoutes);
+app.use('/api/eventos', eventosRoutes);
 app.use('/api', authRoutes);
 
 // Middleware para tratamento de 404
