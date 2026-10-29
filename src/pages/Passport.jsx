@@ -1,7 +1,8 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, FileText, ShieldAlert, ShieldCheck } from 'lucide-react';
 import DocumentUpload from '../components/DocumentUpload';
+import ShareLinksPanel from '../components/ShareLinksPanel';
 import { ApiError, apiFetch, formatDate, formatDateTime, getUser } from '../services/api';
 
 const TIPOS = {
@@ -24,6 +25,9 @@ const labelClass = 'block text-gray-400 font-sans text-xs tracking-widest upperc
 // RFS06 - Consultar Passaporte Digital; RFS07 - atualização por Perito e Administrador
 const Passport = () => {
   const { id } = useParams();
+  // origem da consulta (ex.: alerta), registrada como evento de uso (RNF06)
+  const [searchParams] = useSearchParams();
+  const origem = searchParams.get('origem');
   const user = getUser();
   const [passaporte, setPassaporte] = useState(null);
   const [semPassaporte, setSemPassaporte] = useState(false);
@@ -37,7 +41,7 @@ const Passport = () => {
 
   const load = useCallback(async () => {
     try {
-      const data = await apiFetch(`/passaportes/peca/${id}`);
+      const data = await apiFetch(`/passaportes/peca/${id}`, { params: { origem } });
       setPassaporte(data);
       setStatus(data.status);
       setSemPassaporte(false);
@@ -47,7 +51,7 @@ const Passport = () => {
     } finally {
       setLoading(false);
     }
-  }, [id]);
+  }, [id, origem]);
 
   useEffect(() => {
     load();
@@ -103,6 +107,8 @@ const Passport = () => {
   }
 
   const canUpdate = user?.perfil === 'Perito' || user?.perfil === 'Administrador';
+  // RFC16: o proprietário atual (vendedor ou comprador) compartilha o passaporte
+  const canShare = passaporte?.ehProprietario && (user?.perfil === 'Vendedor' || user?.perfil === 'Comprador');
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12 pt-24 min-h-screen">
@@ -172,6 +178,8 @@ const Passport = () => {
               </div>
             </dl>
           </section>
+
+          {canShare && <ShareLinksPanel passaporteId={passaporte.id} />}
 
           <section aria-labelledby="documentos" className="mb-8">
             <h2 id="documentos" className="text-2xl font-serif mb-4">Documentos</h2>

@@ -13,6 +13,7 @@ import Users from './pages/Users';
 import Passport from './pages/Passport';
 import IssuePassport from './pages/IssuePassport';
 import Transactions from './pages/Transactions';
+import PublicPassport from './pages/PublicPassport';
 import ProtectedRoute from './components/ProtectedRoute';
 
 const App = () => {
@@ -24,6 +25,7 @@ const App = () => {
           <Route path="/" element={<Home />} />
           <Route path="/landing" element={<Landing />} />
           <Route path="/login" element={<Auth />} />
+          <Route path="/p/:token" element={<PublicPassport />} />
           <Route path="/catalogo" element={<ProtectedRoute roles={['Comprador', 'Administrador']}><Catalog /></ProtectedRoute>} />
           <Route path="/peca/:id" element={<ProtectedRoute roles={['Comprador', 'Administrador', 'Vendedor', 'Perito']}><ItemDetails /></ProtectedRoute>} />
           <Route path="/peca/:id/passaporte" element={<ProtectedRoute roles={['Comprador', 'Administrador', 'Vendedor', 'Perito']}><Passport /></ProtectedRoute>} />
