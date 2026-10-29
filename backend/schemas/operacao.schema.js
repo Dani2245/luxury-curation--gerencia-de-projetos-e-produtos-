@@ -37,10 +37,24 @@ const createLancamentoSchema = z.object({
 const changeLancamentoSchema = z.object({ acao: z.enum(['liquidar', 'cancelar']), motivo: optionalText(500) })
   .refine((v) => v.acao !== 'cancelar' || Boolean(v.motivo), { message: 'Informe o motivo do cancelamento', path: ['motivo'] });
 const envioSchema = z.object({ rastreio: requiredText('o rastreio ou comprovante de envio') });
-const conferenciaSchema = z.object({ aprovada: z.boolean(), motivo: optionalText(1000) })
+const conferenciaSchema = z.object({ aprovada: z.boolean(), motivo: optionalText(1000), estadoObservado: optionalText(1000) })
   .refine((v) => v.aprovada || Boolean(v.motivo), { message: 'Informe o motivo da contestação', path: ['motivo'] });
 const resolucaoSchema = z.object({ decisao: z.enum(['liberar', 'estornar']), motivo: requiredText('a justificativa', 1000) });
+// RFS37: prazo de conferência declarado pelo vendedor no aceite (padrão da plataforma se omitido)
+const aceiteSchema = z.object({
+  prazoConferenciaDias: z.preprocess(emptyToUndefined, z.coerce.number({ error: 'Informe o prazo de conferência em dias' })
+    .int('O prazo de conferência deve ser em dias inteiros').min(1, 'O prazo de conferência deve ser de 1 a 30 dias')
+    .max(30, 'O prazo de conferência deve ser de 1 a 30 dias').optional())
+});
+// RFS44: exclusão da retenção registrada por erro
+const exclusaoRetencaoSchema = z.object({ motivo: requiredText('o motivo da exclusão', 500) });
+// RFS42: pagamentos por status e período (data da retenção)
+const paymentsReportSchema = z.object({
+  dataInicial: z.preprocess(emptyToUndefined, date.optional()),
+  dataFinal: z.preprocess(emptyToUndefined, date.optional()),
+  status: z.preprocess(emptyToUndefined, z.enum(['retido', 'liberado', 'estornado'], { error: 'Status de pagamento inválido' }).optional())
+}).refine((q) => !q.dataInicial || !q.dataFinal || q.dataInicial <= q.dataFinal, periodError);
 
 module.exports = { idParams, createCustodiaSchema, moveCustodiaSchema, closeCustodiaSchema, listCustodiasSchema,
   STATUS_TRANSACOES, transactionReportSchema, financialReportSchema, createLancamentoSchema, changeLancamentoSchema,
-  envioSchema, conferenciaSchema, resolucaoSchema };
+  envioSchema, conferenciaSchema, resolucaoSchema, aceiteSchema, exclusaoRetencaoSchema, paymentsReportSchema };

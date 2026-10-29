@@ -25,7 +25,9 @@ const listTransacoesQuerySchema = z
     vendedor: z.preprocess(emptyToUndefined, z.string().trim().optional()),
     dataInicial: dateField('Data inicial inválida'),
     dataFinal: dateField('Data final inválida'),
-    status: z.preprocess(emptyToUndefined, z.enum(STATUS, { error: 'Situação inválida' }).optional())
+    status: z.preprocess(emptyToUndefined, z.enum(STATUS, { error: 'Situação inválida' }).optional()),
+    // RFS38 - conferências e disputas perto da data limite (ou já vencidas)
+    prazo: z.preprocess(emptyToUndefined, z.enum(['proximo'], { error: 'Filtro de prazo inválido' }).optional())
   })
   .refine((q) => !q.dataInicial || !q.dataFinal || q.dataInicial <= q.dataFinal, {
     message: 'A data inicial não pode ser maior que a data final',

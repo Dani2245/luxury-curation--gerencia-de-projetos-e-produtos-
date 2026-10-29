@@ -2,7 +2,7 @@ const router = require('express').Router();
 const { authenticate, authorize } = require('../middlewares/auth');
 const validate = require('../middlewares/validate');
 const { handleDbError } = require('../utils/db-error');
-const { idParams, transactionReportSchema, financialReportSchema, createLancamentoSchema, changeLancamentoSchema } = require('../schemas/operacao.schema');
+const { idParams, transactionReportSchema, financialReportSchema, createLancamentoSchema, changeLancamentoSchema, paymentsReportSchema } = require('../schemas/operacao.schema');
 
 router.use(authenticate, authorize('Administrador'));
 router.get('/transacoes', validate(transactionReportSchema, 'query'), async (req, res) => {
@@ -17,8 +17,10 @@ router.get('/financeiro', validate(financialReportSchema, 'query'), async (req, 
   if (error) return handleDbError(res, error, 'Erro ao emitir relatório financeiro');
   res.json(data);
 });
-router.get('/pagamentos', async (req, res) => {
-  const { data, error } = await req.db.rpc('resumo_pagamentos_retidos');
+// RFS42: totais e lista dos pagamentos simulados, por status e período da retenção
+router.get('/pagamentos', validate(paymentsReportSchema, 'query'), async (req, res) => {
+  const q = req.query;
+  const { data, error } = await req.db.rpc('consultar_pagamentos_retidos', { p_inicio: q.dataInicial ?? null, p_fim: q.dataFinal ?? null, p_status: q.status ?? null });
   if (error) return handleDbError(res, error, 'Erro ao consultar pagamentos retidos');
   res.json(data);
 });

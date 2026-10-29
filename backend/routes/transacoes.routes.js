@@ -3,7 +3,7 @@ const router = express.Router();
 const validate = require('../middlewares/validate');
 const { authenticate, authorize } = require('../middlewares/auth');
 const { handleDbError } = require('../utils/db-error');
-const { idParams, envioSchema, conferenciaSchema, resolucaoSchema } = require('../schemas/operacao.schema');
+const { idParams, envioSchema, conferenciaSchema, resolucaoSchema, aceiteSchema, exclusaoRetencaoSchema } = require('../schemas/operacao.schema');
 const {
   createTransacaoSchema,
   listTransacoesQuerySchema,
@@ -39,7 +39,13 @@ const formatTransacao = (item, perfil) => ({
   retidoEm: item.retido_em,
   liberadoEm: item.liberado_em,
   estornadoEm: item.estornado_em,
-  repasse: perfil === 'Comprador' || item.repasse == null ? null : Number(item.repasse)
+  repasse: perfil === 'Comprador' || item.repasse == null ? null : Number(item.repasse),
+  prazoConferenciaDias: item.prazo_conferencia_dias,
+  conferenciaAte: item.conferencia_ate,
+  decisaoAte: item.decisao_ate,
+  estadoObservado: item.estado_observado,
+  prazoLimite: item.prazo_limite,
+  prazoSituacao: item.prazo_situacao
 });
 
 const fetchTransacao = (db, id) => db.from('vw_transacoes').select('*').eq('id', id).maybeSingle();
@@ -51,7 +57,7 @@ router.get(
   authorize('Comprador', 'Vendedor', 'Administrador'),
   validate(listTransacoesQuerySchema, 'query'),
   async (req, res) => {
-    const { peca, comprador, vendedor, dataInicial, dataFinal, status } = req.query;
+    const { peca, comprador, vendedor, dataInicial, dataFinal, status, prazo } = req.query;
 
     // a view já restringe: comprador e vendedor veem só as próprias; administrador, todas
     let query = req.db.from('vw_transacoes').select('*').order('criado_em', { ascending: false });
@@ -61,6 +67,8 @@ router.get(
     if (dataInicial) query = query.gte('criado_em', `${dataInicial}T00:00:00-03:00`);
     if (dataFinal) query = query.lte('criado_em', `${dataFinal}T23:59:59.999-03:00`);
     if (status) query = query.eq('status', status);
+    // RFS38: o prazo mais curto primeiro
+    if (prazo) query = query.in('prazo_situacao', ['proximo', 'vencido']).order('prazo_limite', { ascending: true });
 
     const { data, error } = await query;
     if (error) return handleDbError(res, error, 'Erro ao consultar transações');
@@ -90,14 +98,15 @@ router.post(
   }
 );
 
-// POST /api/transacoes/:id/confirmar - Aceita a proposta; conferencia conclui a venda (RFC12/RFC13).
+// POST /api/transacoes/:id/confirmar - Aceita a proposta e declara o prazo de conferência (RFS37); conferencia conclui a venda (RFC12/RFC13).
 router.post(
   '/:id/confirmar',
   authenticate,
   authorize('Vendedor'),
   validate(transacaoIdParamSchema, 'params'),
+  validate(aceiteSchema),
   async (req, res) => {
-    const { error } = await req.db.rpc('confirmar_transacao', { p_id: req.params.id });
+    const { error } = await req.db.rpc('confirmar_transacao', { p_id: req.params.id, p_prazo_dias: req.body.prazoConferenciaDias ?? null });
     if (error) return handleDbError(res, error, 'Erro ao confirmar a venda');
 
     const { data } = await fetchTransacao(req.db, req.params.id);
@@ -136,9 +145,12 @@ router.post('/:id/envio', authenticate, authorize('Vendedor'), validate(idParams
 router.post('/:id/recebimento', authenticate, authorize('Comprador'), validate(idParams, 'params'),
   transition('receber_entrega', () => ({})));
 router.post('/:id/conferencia', authenticate, authorize('Comprador'), validate(idParams, 'params'), validate(conferenciaSchema),
-  transition('conferir_entrega', (b) => ({ p_aprovada: b.aprovada, p_motivo: b.motivo ?? null })));
+  transition('conferir_entrega', (b) => ({ p_aprovada: b.aprovada, p_motivo: b.motivo ?? null, p_estado: b.estadoObservado ?? null })));
 router.post('/:id/resolucao', authenticate, authorize('Administrador'), validate(idParams, 'params'), validate(resolucaoSchema),
   transition('resolver_contestacao', (b) => ({ p_decisao: b.decisao, p_motivo: b.motivo })));
+// RFS44: exclui a retenção registrada por erro, antes do envio
+router.delete('/:id/pagamento', authenticate, authorize('Administrador'), validate(idParams, 'params'), validate(exclusaoRetencaoSchema),
+  transition('remover_retencao', (b) => ({ p_motivo: b.motivo })));
 router.get('/:id/historico', authenticate, authorize('Comprador', 'Vendedor', 'Administrador'), validate(idParams, 'params'), async (req, res) => {
   const { data: transacao, error: transacaoError } = await fetchTransacao(req.db, req.params.id);
   if (transacaoError) return handleDbError(res, transacaoError, 'Erro ao consultar a transação');
