@@ -10,13 +10,15 @@ const {
   usuarioIdParamSchema
 } = require('../schemas/usuario.schema');
 
-const COLUNAS = 'id, nome, email, perfil, criado_em';
+const COLUNAS = 'id, nome, email, perfil, origem, criado_em';
 
 const formatUsuario = (item) => ({
   id: item.id,
   nome: item.nome,
   email: item.email,
   perfil: item.perfil,
+  // RFC18: indicação, link, lista de espera, conteúdo, anúncio ou direto
+  origem: item.origem,
   criadoEm: item.criado_em
 });
 
@@ -58,6 +60,12 @@ router.post('/', validate(createUsuarioSchema), async (req, res) => {
     p_perfil: perfil
   });
   if (error) return handleDbError(res, error, 'Erro ao cadastrar usuário');
+
+  // RFC18: a origem vem da indicação ou da lista de espera; sem elas, vale a informada pelo administrador
+  if (req.body.origem) {
+    const { error: origemError } = await req.db.rpc('definir_origem_conta', { p_id: id, p_origem: req.body.origem });
+    if (origemError) return handleDbError(res, origemError, 'Erro ao registrar a origem da conta');
+  }
 
   const { data, error: fetchError } = await req.db.from('perfis').select(COLUNAS).eq('id', id).single();
   if (fetchError) return handleDbError(res, fetchError, 'Erro ao buscar usuário cadastrado');

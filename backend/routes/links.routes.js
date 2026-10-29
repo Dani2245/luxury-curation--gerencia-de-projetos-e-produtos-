@@ -42,7 +42,12 @@ router.get('/', validate(listLinksQuerySchema, 'query'), async (req, res) => {
   const { data, error } = await query;
   if (error) return handleDbError(res, error, 'Erro ao consultar links de compartilhamento');
 
-  res.json(data.map(formatLink));
+  // RFS54: inscrições na lista de espera originadas de cada link (RFC17 e RFC18)
+  const { data: cadastros, error: cadastrosError } = await req.db.rpc('cadastros_por_link');
+  if (cadastrosError) return handleDbError(res, cadastrosError, 'Erro ao consultar cadastros originados dos links');
+  const porLink = Object.fromEntries((cadastros || []).map((c) => [c.link_id, Number(c.cadastros)]));
+
+  res.json(data.map((item) => ({ ...formatLink(item), cadastros: porLink[item.id] ?? 0 })));
 });
 
 // GET /api/links/:id/acessos - Histórico de acessos de um link (RFS54)

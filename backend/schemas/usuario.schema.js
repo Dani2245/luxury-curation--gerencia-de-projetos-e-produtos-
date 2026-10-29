@@ -27,7 +27,9 @@ const createUsuarioSchema = z.object({
   nome: nomeField,
   email: emailField,
   perfil: perfilField,
-  senha: senhaField
+  senha: senhaField,
+  // RFC18: usada só quando a conta não vem de indicação nem da lista de espera
+  origem: z.preprocess(emptyToUndefined, z.enum(['link', 'conteúdo', 'anúncio', 'direto'], { error: 'Origem inválida' }).optional())
 });
 
 // Na edição a senha é opcional: em branco mantém a senha atual
