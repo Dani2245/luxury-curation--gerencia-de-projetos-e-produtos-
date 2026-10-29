@@ -68,3 +68,28 @@ $$;
 
 revoke all on function public.e2e_ajustar_prazo(bigint, numeric) from public, anon;
 grant execute on function public.e2e_ajustar_prazo(bigint, numeric) to authenticated;
+
+-- Apaga os dados de growth criados pelos testes: inscricoes e indicacoes com e-mail e2e-...,
+-- experimentos e indicadores com nome iniciado por "E2E " (RFC17 a RFC20).
+create or replace function public.e2e_limpar_growth()
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if not public.is_admin() then
+    raise exception 'Acesso negado' using errcode = '42501';
+  end if;
+  if to_regclass('public.lista_espera') is null then
+    return;
+  end if;
+  delete from public.lista_espera where email like 'e2e-%';
+  delete from public.indicacoes where contato like 'e2e-%';
+  delete from public.experimentos where titulo like 'E2E %';
+  delete from public.indicadores where nome like 'E2E %';
+end;
+$$;
+
+revoke all on function public.e2e_limpar_growth() from public, anon;
+grant execute on function public.e2e_limpar_growth() to authenticated;
