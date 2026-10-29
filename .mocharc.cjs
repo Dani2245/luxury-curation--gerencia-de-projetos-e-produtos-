@@ -1,5 +1,6 @@
+// O padrão de arquivos fica no script test:e2e, para que `npx mocha tests/e2e/<arquivo>.test.js`
+// rode apenas a suíte informada (útil para demonstrar um requisito por vez)
 module.exports = {
-  spec: 'tests/e2e/**/*.test.js',
   timeout: 40000,
   slow: 8000
 };
