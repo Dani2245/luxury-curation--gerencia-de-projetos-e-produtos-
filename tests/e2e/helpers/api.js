@@ -103,6 +103,30 @@ export const createLinkApi = async (passaporteId, { user = USERS.vendedor, campo
 // Requisição autenticada com o perfil informado, para verificar respostas da API (ex.: 403)
 export const requestAs = async (user, path, options = {}) => request(path, { ...options, token: await loginApi(user.email) });
 
+// Listas de desejos do comprador de teste (RFC22)
+export const createListApi = async (body) => {
+  const { status, data } = await requestAs(USERS.comprador, '/listas', { method: 'POST', body });
+  if (status !== 201) throw new Error(`Criação da lista falhou (${status}): ${data?.message}`);
+  return data;
+};
+
+export const deleteListsApi = async (fragmento) => {
+  const token = await loginApi(USERS.comprador.email);
+  const { data } = await request('/listas', { token });
+  for (const lista of (data || []).filter((l) => l.nome.includes(fragmento))) {
+    await request(`/listas/${lista.id}`, { method: 'DELETE', token });
+  }
+};
+
+// Alertas do usuário (RFC21); remover antes e depois mantém a suíte repetível
+export const deleteAlertsApi = async (user) => {
+  const token = await loginApi(user.email);
+  const { data } = await request('/alertas', { token });
+  for (const alerta of data || []) {
+    await request(`/alertas/${alerta.id}`, { method: 'DELETE', token });
+  }
+};
+
 // Remove as peças criadas pelos testes (nome com o prefixo), inclusive vendidas, com transações e passaportes
 export const cleanupE2E = async (prefix = 'E2E ') => {
   if (!SUPABASE_URL || !SUPABASE_KEY) return;
