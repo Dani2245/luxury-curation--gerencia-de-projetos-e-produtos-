@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { apiFetch, saveSession } from '../services/api';
 
 const Auth = () => {
@@ -7,12 +7,15 @@ const Auth = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const navigate = useNavigate();
+  // origem do acesso (ex.: link ou QR do passaporte), registrada com a sessão (RNF06)
+  const [searchParams] = useSearchParams();
+  const origem = searchParams.get('origem') || undefined;
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setError('');
     try {
-      const data = await apiFetch('/login', { method: 'POST', body: { email, password } });
+      const data = await apiFetch('/login', { method: 'POST', body: { email, password, origem } });
       saveSession(data.token, data.user);
       navigate('/dashboard');
     } catch (err) {

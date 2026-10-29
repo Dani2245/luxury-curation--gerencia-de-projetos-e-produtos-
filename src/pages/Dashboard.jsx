@@ -4,6 +4,7 @@ import { Plus, LogOut, Users, Store, ArrowLeftRight } from 'lucide-react';
 import SellerItemsPanel from '../components/SellerItemsPanel';
 import AdminListingsPanel from '../components/AdminListingsPanel';
 import PassportQueuePanel from '../components/PassportQueuePanel';
+import UsageEventsPanel from '../components/UsageEventsPanel';
 import { clearSession, getUser } from '../services/api';
 
 const TITULOS = {
@@ -70,7 +71,12 @@ const Dashboard = () => {
       </div>
 
       {user.perfil === 'Vendedor' && <SellerItemsPanel />}
-      {user.perfil === 'Administrador' && <AdminListingsPanel />}
+      {user.perfil === 'Administrador' && (
+        <>
+          <AdminListingsPanel />
+          <UsageEventsPanel />
+        </>
+      )}
       {user.perfil === 'Comprador' && (
         <p className="text-gray-400 font-sans">Explore o catálogo para buscar peças com passaporte digital de autenticidade.</p>
       )}
