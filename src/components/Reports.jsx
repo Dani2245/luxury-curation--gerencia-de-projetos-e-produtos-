@@ -8,6 +8,8 @@ const STATUS = { pendente: 'Aguardando vendedor', aceita: 'Aguardando pagamento'
 const initialFilters = () => ({ dataInicial: today().slice(0, 7) + '-01', dataFinal: today(), categoria: '', status: '', tipo: '' });
 const freshEntry = () => ({ tipo: 'receita', categoria: 'emissao_passaporte', descricao: '', valor: '', competencia: today(), vencimento: today() });
 const cell = 'p-3 border-b border-gray-800';
+const PAYMENT_STATUS = { retido: 'Retido', liberado: 'Liberado', estornado: 'Estornado' };
+const emptyPaymentFilters = { dataInicial: '', dataFinal: '', status: '' };
 const Summary = ({ label, value, testId }) => <div className="border border-gray-800 bg-[#111] p-4"><p className="text-gray-400 font-sans text-xs mb-2">{label}</p><p data-testid={testId} className="text-xl text-white">{formatCurrency(value)}</p></div>;
 
 export default function Reports() {
@@ -16,6 +18,8 @@ export default function Reports() {
   const [data, setData] = useState(null);
   const [entry, setEntry] = useState(freshEntry);
   const [payments, setPayments] = useState(null);
+  const [paymentFilters, setPaymentFilters] = useState(emptyPaymentFilters);
+  const paymentQuery = useRef(emptyPaymentFilters);
   const [history, setHistory] = useState(null);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
@@ -29,7 +33,7 @@ export default function Reports() {
       const result = await apiFetch(`/relatorios/${kind}`, { params });
       if (id === request.current) setData(result);
       if (kind === 'financeiro') {
-        const p = await apiFetch('/relatorios/pagamentos');
+        const p = await apiFetch('/relatorios/pagamentos', { params: paymentQuery.current });
         if (id === request.current) setPayments(p);
       }
     } catch (e) { if (id === request.current) { setError(e.message); setData(null); } }
@@ -56,6 +60,16 @@ export default function Reports() {
     if (acao === 'cancelar' && motivo === null) return;
     run(() => apiFetch(`/relatorios/lancamentos/${item.id}`, { method: 'PATCH', body: { acao, motivo } }), acao === 'liquidar' ? 'Lançamento liquidado.' : 'Lançamento cancelado. Histórico preservado.');
   };
+  // RFS42: pagamentos simulados por status e período da retenção
+  const filterPayments = async (e) => {
+    e.preventDefault();
+    setError('');
+    try {
+      const p = await apiFetch('/relatorios/pagamentos', { params: paymentFilters });
+      paymentQuery.current = paymentFilters;
+      setPayments(p);
+    } catch (err) { setError(err.message); }
+  };
   const showHistory = async (item) => {
     try { setHistory({ descricao: item.descricao, eventos: await apiFetch(`/relatorios/lancamentos/${item.id}/historico`) }); }
     catch (e) { setError(e.message); }
@@ -79,7 +93,18 @@ export default function Reports() {
       {data.grupos.map((g) => <section key={g.categoria} className="mb-6 overflow-x-auto border border-gray-800"><table className="w-full text-left font-sans text-sm"><caption className="text-left font-serif text-xl p-4 bg-[#111]">{g.categoria}</caption><thead><tr>{['Peça', 'Comprador', 'Vendedor', 'Data', 'Situação', 'Valor'].map((s) => <th className={cell} scope="col" key={s}>{s}</th>)}</tr></thead><tbody>{g.transacoes.map((t) => <tr key={t.id}><td className={cell}>{t.peca}</td><td className={cell}>{t.comprador}</td><td className={cell}>{t.vendedor}</td><td className={cell}>{formatDateTime(t.criado_em)}</td><td className={cell}>{STATUS[t.status]}</td><td className={cell}>{formatCurrency(t.valor)}</td></tr>)}</tbody><tfoot><tr><th className={cell} colSpan={5}>Subtotal · {g.quantidade} transação(ões)</th><td data-testid={`subtotal-${g.categoria}`} className={cell}>{formatCurrency(g.subtotal)}</td></tr></tfoot></table></section>)}
     </> : data && <>
       <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-6">{[['Receitas previstas', 'receitas'], ['Despesas previstas', 'despesas'], ['A receber', 'aReceber'], ['A pagar', 'aPagar'], ['Recebido', 'recebido'], ['Pago', 'pago'], ['Resultado previsto', 'resultadoPrevisto'], ['Saldo realizado', 'saldoRealizado']].map(([label, key]) => <Summary key={key} label={label} value={data[key]} testId={`f-${key}`} />)}</div>
-      {payments && <section aria-label="Pagamentos simulados" className="mb-8"><h2 className="font-serif text-xl mb-2">Pagamentos simulados · posição atual</h2><p className="text-gray-500 text-xs font-sans mb-3">Valores de terceiros, separados da receita da Lastro. Esta posição considera todas as datas. Nenhum valor real é movimentado.</p><div className="grid sm:grid-cols-3 gap-3"><Summary label="Retido aguardando conferência" value={payments.retido} /><Summary label="Repasses liberados" value={payments.repassesLiberados} /><Summary label="Estornado ao comprador" value={payments.estornado} /></div></section>}
+      {payments && <section aria-label="Pagamentos simulados" className="mb-8">
+        <h2 className="font-serif text-xl mb-2">Pagamentos simulados</h2>
+        <p className="text-gray-500 text-xs font-sans mb-3">Valores de terceiros, separados da receita da Lastro. Filtre pela data da retenção e pelo status; sem datas, a consulta considera todas. Nenhum valor real é movimentado.</p>
+        <form onSubmit={filterPayments} className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4 items-end">
+          <Field id="p-inicio" label="Retido a partir de" type="date" value={paymentFilters.dataInicial} onChange={(e) => setPaymentFilters({ ...paymentFilters, dataInicial: e.target.value })} />
+          <Field id="p-fim" label="Retido até" type="date" value={paymentFilters.dataFinal} onChange={(e) => setPaymentFilters({ ...paymentFilters, dataFinal: e.target.value })} />
+          <Field id="p-status" label="Status do pagamento"><select id="p-status" className={inputClass} value={paymentFilters.status} onChange={(e) => setPaymentFilters({ ...paymentFilters, status: e.target.value })}><option value="">Todos</option>{Object.entries(PAYMENT_STATUS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></Field>
+          <button className={buttonClass}>Filtrar pagamentos</button>
+        </form>
+        <div className="grid sm:grid-cols-3 gap-3 mb-4"><Summary label="Retido aguardando conferência" value={payments.retido} /><Summary label="Repasses liberados" value={payments.repassesLiberados} /><Summary label="Estornado ao comprador" value={payments.estornado} /></div>
+        {payments.pagamentos.length === 0 ? <p className="text-gray-400 py-4">Nenhum pagamento simulado com esses filtros.</p> : <div className="overflow-x-auto border border-gray-800"><table className="w-full font-sans text-sm text-left"><caption className="sr-only">Pagamentos simulados</caption><thead><tr>{['Peça', 'Comprador', 'Vendedor', 'Valor', 'Repasse', 'Status', 'Retido em', 'Liberado / estornado em'].map((s) => <th className={cell} scope="col" key={s}>{s}</th>)}</tr></thead><tbody>{payments.pagamentos.map((p) => <tr key={p.transacaoId} data-testid={`pagamento-${p.transacaoId}`}><td className={cell}>{p.peca}</td><td className={cell}>{p.comprador}</td><td className={cell}>{p.vendedor}</td><td className={cell}>{formatCurrency(p.valor)}</td><td className={cell}>{formatCurrency(p.repasse)}</td><td className={cell}>{PAYMENT_STATUS[p.status]}</td><td className={cell}>{formatDateTime(p.retidoEm)}</td><td className={cell}>{formatDateTime(p.liberadoEm || p.estornadoEm)}</td></tr>)}</tbody></table></div>}
+      </section>}
       <section className="border border-gray-800 p-5 mb-6" aria-labelledby="novo-lancamento"><h2 id="novo-lancamento" className="font-serif text-2xl mb-4">Registrar conta</h2><p className="text-gray-500 font-sans text-xs mb-4">Comissões de venda são registradas automaticamente na conclusão. Cadastre aqui as demais receitas e despesas.</p><form onSubmit={create} className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
         <Field id="f-tipo" label="Tipo"><select id="f-tipo" className={inputClass} value={entry.tipo} onChange={(e) => setEntry({ ...entry, tipo: e.target.value, categoria: e.target.value === 'receita' ? 'emissao_passaporte' : 'comissao_perito' })}><option value="receita">Receita</option><option value="despesa">Despesa</option></select></Field>
         <Field id="f-categoria" label="Categoria"><select id="f-categoria" className={inputClass} value={entry.categoria} onChange={(e) => setEntry({ ...entry, categoria: e.target.value })}>{manualCategories.map((c) => <option key={c} value={c}>{FINANCIAL_CATEGORIES[c]}</option>)}</select></Field>

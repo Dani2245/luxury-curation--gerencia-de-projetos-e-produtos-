@@ -17,7 +17,20 @@ const STATUS_STYLE = {
 
 const inputClass = 'w-full bg-[#111] border border-gray-800 py-2 px-3 text-gray-300 focus:outline-none focus:border-gray-500 font-sans transition-colors';
 const labelClass = 'block text-gray-500 font-sans text-xs tracking-widest uppercase mb-2';
-const emptyFilters = { peca: '', comprador: '', vendedor: '', dataInicial: '', dataFinal: '', status: '' };
+const emptyFilters = { peca: '', comprador: '', vendedor: '', dataInicial: '', dataFinal: '', status: '', prazo: '' };
+
+// RFS38 - conferências e disputas perto da data limite (menos de 2 dias) ou vencidas
+const PRAZO_STYLE = {
+  proximo: { text: 'Perto da data limite', className: 'text-orange-300' },
+  vencido: { text: 'Prazo vencido', className: 'text-red-400' }
+};
+const dias = (n) => `${n} ${n === 1 ? 'dia' : 'dias'}`;
+const prazoInfo = (t) => {
+  if (t.status === 'em_conferencia' && t.conferenciaAte) return `Conferir até ${formatDateTime(t.conferenciaAte)}`;
+  if (t.status === 'contestada' && t.decisaoAte) return `Decisão até ${formatDateTime(t.decisaoAte)}`;
+  if (['aceita', 'paga', 'enviada'].includes(t.status) && t.prazoConferenciaDias) return `Prazo de conferência: ${dias(t.prazoConferenciaDias)} após o recebimento`;
+  return null;
+};
 
 // RFC04 - acompanhamento das transações (RFS14, RFS15, RFS16 e registro da transferência, RFS08)
 const Transactions = () => {
@@ -80,9 +93,11 @@ const Transactions = () => {
   };
 
   const handleConfirm = (t) => {
-    if (!window.confirm(`Aceitar a proposta de "${t.pecaNome}" por ${formatCurrency(t.valor)}? A venda será concluída após a conferência.`)) return;
+    // RFS37: o vendedor declara o prazo de conferência do comprador ao aceitar
+    const prazo = window.prompt(`Aceitar a proposta de "${t.pecaNome}" por ${formatCurrency(t.valor)}? A venda será concluída após a conferência.\n\nPrazo de conferência do comprador, em dias após o recebimento (1 a 30):`, '7');
+    if (prazo === null) return;
     act('Proposta aceita. Aguardando pagamento simulado.', () =>
-      apiFetch(`/transacoes/${t.id}/confirmar`, { method: 'POST' }));
+      apiFetch(`/transacoes/${t.id}/confirmar`, { method: 'POST', body: { prazoConferenciaDias: prazo } }));
   };
 
   const handleCancel = (t) => {
@@ -138,6 +153,10 @@ const Transactions = () => {
           <label htmlFor="t-status" className={labelClass}>Situação</label>
           <select id="t-status" className={inputClass} value={filters.status} onChange={(e) => setFilters({ ...filters, status: e.target.value })}><option value="">Todas</option>{Object.entries(STATUS_STYLE).map(([v, s]) => <option key={v} value={v}>{s.text}</option>)}</select>
         </div>
+        <label htmlFor="t-prazo" className="flex items-center gap-2 text-gray-400 font-sans text-xs uppercase tracking-widest pb-2">
+          <input id="t-prazo" type="checkbox" checked={filters.prazo === 'proximo'} onChange={(e) => setFilters({ ...filters, prazo: e.target.checked ? 'proximo' : '' })} />
+          Perto da data limite
+        </label>
         <div className="flex gap-2">
           <button type="submit" className="flex-1 bg-white text-black py-2 font-sans uppercase tracking-widest text-xs font-medium hover:bg-gray-200 transition-colors">Buscar</button>
           <button type="button" onClick={handleClear} className="px-3 border border-gray-700 text-gray-400 font-sans text-xs uppercase tracking-widest hover:border-white hover:text-white transition-colors">Limpar</button>
@@ -176,7 +195,7 @@ const Transactions = () => {
               {items.map((t) => {
                 const status = STATUS_STYLE[t.status] || { text: t.status, className: 'text-gray-400' };
                 return (
-                  <tr key={t.id} className="border-t border-gray-800 align-top">
+                  <tr key={t.id} data-testid={`transacao-${t.id}`} className="border-t border-gray-800 align-top">
                     <td className="px-4 py-3 text-white">
                       <Link to={`/peca/${t.pecaId}`} className="hover:text-[#A69076]">{t.pecaNome}</Link>
                     </td>
@@ -194,6 +213,13 @@ const Transactions = () => {
                       {t.pagamentoStatus && <span className="block text-xs text-gray-400">Pagamento simulado: {t.pagamentoStatus}</span>}
                       {t.rastreio && <span className="block text-xs text-gray-400">Envio: {t.rastreio}</span>}
                       {t.motivoContestacao && <span className="block text-xs text-orange-300">Contestação: {t.motivoContestacao}</span>}
+                      {t.estadoObservado && <span className="block text-xs text-gray-400">Estado observado: {t.estadoObservado}</span>}
+                      {prazoInfo(t) && (
+                        <span data-testid={`prazo-${t.id}`} className="block text-xs text-gray-300">
+                          {prazoInfo(t)}
+                          {PRAZO_STYLE[t.prazoSituacao] && <span className={`block font-medium ${PRAZO_STYLE[t.prazoSituacao].className}`}>{PRAZO_STYLE[t.prazoSituacao].text}</span>}
+                        </span>
+                      )}
                       {t.resolucao && <span className="block text-xs text-gray-400">Decisão: {t.resolucao}</span>}
                     </td>
                     <td className="px-4 py-3 text-gray-400">{formatDateTime(t.criadoEm)}</td>
