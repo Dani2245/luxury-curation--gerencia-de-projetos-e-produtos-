@@ -40,3 +40,31 @@ $$;
 
 revoke all on function public.e2e_limpar_dados(text) from public, anon;
 grant execute on function public.e2e_limpar_dados(text) to authenticated;
+
+-- Antecipa o prazo em aberto (conferencia ou decisao da disputa) de uma transacao de teste,
+-- para demonstrar prazos proximos e vencidos sem esperar dias (RFC12).
+create or replace function public.e2e_ajustar_prazo(p_transacao bigint, p_horas numeric)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if not public.is_admin() then
+    raise exception 'Acesso negado' using errcode = '42501';
+  end if;
+  if to_regclass('public.transacoes') is null or not exists (
+    select 1 from public.transacoes t join public.pecas p on p.id = t.peca_id
+     where t.id = p_transacao and p.nome like 'E2E %') then
+    raise exception 'Somente transacoes de pecas de teste (E2E)' using errcode = 'P0001';
+  end if;
+  execute 'update public.transacoes set
+      conferencia_ate = case when status = ''em_conferencia'' then now() + make_interval(secs => $2 * 3600) else conferencia_ate end,
+      decisao_ate = case when status = ''contestada'' then now() + make_interval(secs => $2 * 3600) else decisao_ate end
+    where id = $1'
+    using p_transacao, p_horas;
+end;
+$$;
+
+revoke all on function public.e2e_ajustar_prazo(bigint, numeric) from public, anon;
+grant execute on function public.e2e_ajustar_prazo(bigint, numeric) to authenticated;
