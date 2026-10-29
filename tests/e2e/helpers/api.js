@@ -83,6 +83,26 @@ export const proposeApi = async (pecaId, valor) => {
   return data;
 };
 
+export const confirmSaleApi = async (transacaoId) => {
+  const vendedor = await loginApi(USERS.vendedor.email);
+  const { status, data } = await request(`/transacoes/${transacaoId}/confirmar`, { method: 'POST', token: vendedor });
+  if (status !== 200) throw new Error(`Confirmação da venda falhou (${status}): ${data?.message}`);
+  return data;
+};
+
+// Campos públicos padrão do link de compartilhamento: identidade do dono e valor ficam privados (RNF04)
+export const CAMPOS_PADRAO = ['descricao', 'fotografias', 'documentos', 'historico_proprietarios', 'historico_eventos'];
+
+export const createLinkApi = async (passaporteId, { user = USERS.vendedor, camposPublicos = CAMPOS_PADRAO, validade = null } = {}) => {
+  const token = await loginApi(user.email);
+  const { status, data } = await request('/links', { method: 'POST', token, body: { passaporteId, camposPublicos, validade } });
+  if (status !== 201) throw new Error(`Geração do link falhou (${status}): ${data?.message}`);
+  return data;
+};
+
+// Requisição autenticada com o perfil informado, para verificar respostas da API (ex.: 403)
+export const requestAs = async (user, path, options = {}) => request(path, { ...options, token: await loginApi(user.email) });
+
 // Remove as peças criadas pelos testes (nome com o prefixo), inclusive vendidas, com transações e passaportes
 export const cleanupE2E = async (prefix = 'E2E ') => {
   if (!SUPABASE_URL || !SUPABASE_KEY) return;
