@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ShieldCheck, ArrowLeft, FileText } from 'lucide-react';
 import ProposalBox from '../components/ProposalBox';
+import SaveToWishlist from '../components/SaveToWishlist';
 import { apiFetch, formatCurrency, getUser } from '../services/api';
 
 const ItemDetails = () => {
@@ -123,6 +124,13 @@ const ItemDetails = () => {
 
           {(user?.perfil === 'Comprador' || user?.perfil === 'Administrador') && item.publicacao === 'publicada' && (
             <ProposalBox key={`${item.id}-${item.emNegociacao}-${item.vendida}`} item={item} onRegistered={fetchItem} />
+          )}
+
+          {/* RFC22: o comprador salva a peça consultada na lista de desejos */}
+          {user?.perfil === 'Comprador' && item.publicacao === 'publicada' && !item.vendida && (
+            <div className="mt-8">
+              <SaveToWishlist pecaId={item.id} />
+            </div>
           )}
         </div>
       </div>
