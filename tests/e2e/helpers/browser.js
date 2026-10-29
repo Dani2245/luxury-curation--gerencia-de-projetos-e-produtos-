@@ -15,8 +15,8 @@ export const open = (driver, path = '/') => driver.get(`${BASE_URL}${path}`);
 
 export const byLabel = (driver, text) => driver.findElement(By.css(`[aria-label="${text}"]`));
 
-export const waitForPath = (driver, path) =>
-  driver.wait(async () => new URL(await driver.getCurrentUrl()).pathname === path, TIMEOUT, `Esperava estar em ${path}`);
+export const waitForPath = (driver, path, timeout = TIMEOUT) =>
+  driver.wait(async () => new URL(await driver.getCurrentUrl()).pathname === path, timeout, `Esperava estar em ${path}`);
 
 export const waitVisible = async (driver, locator) => {
   const element = await driver.wait(until.elementLocated(locator), TIMEOUT);
@@ -80,7 +80,8 @@ export const loginAs = async (driver, email, password = PASSWORD) => {
 
 export const loginAndWaitDashboard = async (driver, email, password) => {
   await loginAs(driver, email, password);
-  await waitForPath(driver, '/dashboard');
+  // o login passa pelo Supabase Auth, que pode demorar quando a suíte completa sobrecarrega o projeto
+  await waitForPath(driver, '/dashboard', 2 * TIMEOUT);
 };
 
 export const clearSession = async (driver) => {
