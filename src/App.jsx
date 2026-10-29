@@ -19,6 +19,10 @@ import Alerts from './pages/Alerts';
 import ProtectedRoute from './components/ProtectedRoute';
 import Custody from './components/Custody';
 import Reports from './components/Reports';
+import Waitlist from './pages/Waitlist';
+import WaitlistAdmin from './pages/WaitlistAdmin';
+import Referrals from './pages/Referrals';
+import Growth from './pages/Growth';
 
 const App = () => {
   return (
@@ -43,6 +47,10 @@ const App = () => {
           <Route path="/dashboard/usuarios" element={<ProtectedRoute roles={['Administrador']}><Users /></ProtectedRoute>} />
           <Route path="/dashboard/custodias" element={<ProtectedRoute roles={['Administrador']}><Custody /></ProtectedRoute>} />
           <Route path="/dashboard/relatorios" element={<ProtectedRoute roles={['Administrador']}><Reports /></ProtectedRoute>} />
+          <Route path="/lista-de-espera" element={<Waitlist />} />
+          <Route path="/dashboard/lista-espera" element={<ProtectedRoute roles={['Administrador']}><WaitlistAdmin /></ProtectedRoute>} />
+          <Route path="/dashboard/indicacoes" element={<ProtectedRoute><Referrals /></ProtectedRoute>} />
+          <Route path="/dashboard/growth" element={<ProtectedRoute roles={['Administrador']}><Growth /></ProtectedRoute>} />
         </Routes>
       </main>
     </div>

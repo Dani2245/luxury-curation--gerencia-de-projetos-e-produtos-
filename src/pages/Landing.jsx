@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import HeroSection from '../components/HeroSection';
 import VideoSection from '../components/VideoSection';
 import DigitalPassportDemo from '../components/DigitalPassportDemo';
@@ -8,6 +8,8 @@ import CaseStudyEndorsement from '../components/CaseStudyEndorsement';
 import CuratedSelection from '../components/CuratedSelection';
 
 const Landing = () => {
+  // RFC17: a versão da página (?v=) e a origem (?utm_source=) seguem para a inscrição na lista de espera
+  const { search } = useLocation();
   return (
     <div className="bg-[#0a0a0a] min-h-screen text-gray-200 font-sans w-full">
       {/* Hero Section */}
@@ -40,8 +42,8 @@ const Landing = () => {
               Junte-se a um grupo seleto de colecionadores e tenha acesso ao nosso portfólio restrito de peças extraordinárias.
             </p>
             <div className="flex flex-col sm:flex-row justify-center items-center gap-6">
-            <Link to="/login" className="bg-[#A69076] text-white px-10 py-4 w-full sm:w-auto hover:bg-[#8B7355] transition-all duration-300 text-xs tracking-[0.2em] uppercase font-bold shadow-[0_0_20px_rgba(166,144,118,0.3)] hover:shadow-[0_0_30px_rgba(166,144,118,0.5)]">
-              Criar Conta Exclusiva
+            <Link to={`/lista-de-espera${search}`} className="bg-[#A69076] text-white px-10 py-4 w-full sm:w-auto hover:bg-[#8B7355] transition-all duration-300 text-xs tracking-[0.2em] uppercase font-bold shadow-[0_0_20px_rgba(166,144,118,0.3)] hover:shadow-[0_0_30px_rgba(166,144,118,0.5)]">
+              Entrar na lista de espera
             </Link>
             <Link to="/catalogo" className="border border-white/30 text-white px-10 py-4 w-full sm:w-auto hover:border-[#A69076] hover:text-[#A69076] transition-colors duration-300 text-xs tracking-[0.2em] uppercase">
               Explorar o Catálogo

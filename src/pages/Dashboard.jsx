@@ -50,6 +50,8 @@ const Dashboard = () => {
           {user.perfil === 'Administrador' && (
             <><Link to="/dashboard/custodias" className={linkClass}>Custódia física</Link>
             <Link to="/dashboard/relatorios" className={linkClass}>Relatórios e financeiro</Link>
+            <Link to="/dashboard/growth" className={linkClass}>Growth</Link>
+            <Link to="/dashboard/lista-espera" className={linkClass}>Lista de espera</Link>
             <Link to="/dashboard/usuarios" className={linkClass}>
               <Users className="w-4 h-4" /> Usuários
             </Link></>
@@ -69,6 +71,7 @@ const Dashboard = () => {
               <Bell className="w-4 h-4" /> Alertas
             </Link>
           )}
+          <Link to="/dashboard/indicacoes" className={linkClass}>Indicações</Link>
           <button
             type="button"
             onClick={handleLogout}

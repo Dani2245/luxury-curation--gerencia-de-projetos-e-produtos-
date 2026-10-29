@@ -7,7 +7,9 @@ const PERFIS = ['Administrador', 'Vendedor', 'Comprador', 'Perito'];
 
 const inputClass = 'w-full bg-[#0a0a0a] border border-gray-700 px-4 py-3 text-white focus:outline-none focus:border-[#A69076] transition-colors font-sans';
 const labelClass = 'block text-gray-400 font-sans text-xs tracking-widest uppercase mb-2';
-const emptyForm = { nome: '', email: '', perfil: 'Comprador', senha: '' };
+const emptyForm = { nome: '', email: '', perfil: 'Comprador', senha: '', origem: '' };
+// RFC18: rótulos da origem da conta
+const ORIGENS = { 'indicação': 'Indicação', link: 'Link de passaporte', 'lista de espera': 'Lista de espera', 'conteúdo': 'Conteúdo', 'anúncio': 'Anúncio', direto: 'Direto' };
 
 // Manter Usuários (RFC01 / RFS09-RFS12) - exclusivo do Administrador
 const Users = () => {
@@ -180,6 +182,18 @@ const Users = () => {
                 placeholder={editingId ? 'Deixe em branco para manter' : 'Mínimo de 8 caracteres'}
               />
             </div>
+            {!editingId && (
+              <div>
+                <label htmlFor="usuario-origem" className={labelClass}>Origem da conta</label>
+                <select id="usuario-origem" value={form.origem} onChange={(e) => setForm({ ...form, origem: e.target.value })} className={`${inputClass} appearance-none`}>
+                  <option value="">Automática (indicação ou lista de espera)</option>
+                  <option value="link">Link de passaporte</option>
+                  <option value="conteúdo">Conteúdo</option>
+                  <option value="anúncio">Anúncio</option>
+                  <option value="direto">Direto</option>
+                </select>
+              </div>
+            )}
           </div>
 
           <div className="flex justify-end gap-4">
@@ -208,6 +222,7 @@ const Users = () => {
                 <th scope="col" className="px-4 py-3">Nome</th>
                 <th scope="col" className="px-4 py-3">E-mail</th>
                 <th scope="col" className="px-4 py-3">Perfil</th>
+                <th scope="col" className="px-4 py-3">Origem</th>
                 <th scope="col" className="px-4 py-3 text-right">Ações</th>
               </tr>
             </thead>
@@ -217,6 +232,7 @@ const Users = () => {
                   <td className="px-4 py-3 text-white">{user.nome}</td>
                   <td className="px-4 py-3 text-gray-400">{user.email}</td>
                   <td className="px-4 py-3 text-[#A69076]">{user.perfil}</td>
+                  <td className="px-4 py-3 text-gray-400">{ORIGENS[user.origem] || user.origem}</td>
                   <td className="px-4 py-3">
                     <div className="flex justify-end gap-3">
                       <button type="button" onClick={() => openEdit(user)} aria-label={`Editar ${user.nome}`} title="Editar" className="text-gray-400 hover:text-white">

@@ -246,6 +246,10 @@ const ShareLinksPanel = ({ passaporteId }) => {
                   {plural(link.acessos, 'acesso', 'acessos')} ({link.acessosQr} pelo QR code)
                   {link.ultimoAcesso && <span className="text-gray-500"> · último em {formatDateTime(link.ultimoAcesso)}</span>}
                 </p>
+                {/* RFS54: inscrições na lista de espera feitas a partir deste link */}
+                <p className="font-sans text-xs text-gray-400" data-testid={`cadastros-${link.id}`}>
+                  {plural(link.cadastros ?? 0, 'cadastro originado', 'cadastros originados')}
+                </p>
                 <p className="font-sans text-xs text-gray-500">
                   Públicos: {link.camposPublicos.length
                     ? CAMPOS_PUBLICOS.filter((c) => link.camposPublicos.includes(c.id)).map((c) => c.label).join(' · ')

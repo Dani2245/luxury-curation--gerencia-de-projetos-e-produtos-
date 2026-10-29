@@ -194,6 +194,10 @@ const PublicPassport = () => {
           <Link to="/landing" className="bg-[#A69076] text-white px-6 py-3 text-xs tracking-[0.2em] uppercase font-bold hover:bg-[#8B7355] transition-colors">
             Conheça a Lastro
           </Link>
+          {/* RFC17/RFS54: a inscrição feita a partir do link fica vinculada a ele */}
+          <Link to={`/lista-de-espera?link=${token}&origem=link`} className="border border-[#A69076] text-[#D3BE96] px-6 py-3 text-xs tracking-[0.2em] uppercase hover:bg-[#A69076] hover:text-black transition-colors">
+            Lista de espera
+          </Link>
           <Link to={`/login?origem=${origem}`} className="border border-white/30 text-white px-6 py-3 text-xs tracking-[0.2em] uppercase hover:border-[#A69076] hover:text-[#A69076] transition-colors">
             Acesso privado
           </Link>
