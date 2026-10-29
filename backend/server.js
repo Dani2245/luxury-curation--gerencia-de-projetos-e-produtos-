@@ -10,6 +10,9 @@ const transacoesRoutes = require('./routes/transacoes.routes');
 const linksRoutes = require('./routes/links.routes');
 const publicoRoutes = require('./routes/publico.routes');
 const eventosRoutes = require('./routes/eventos.routes');
+const listasRoutes = require('./routes/listas.routes');
+const alertasRoutes = require('./routes/alertas.routes');
+const notificacoesRoutes = require('./routes/notificacoes.routes');
 
 const app = express();
 
@@ -34,6 +37,9 @@ app.use('/api/transacoes', transacoesRoutes);
 app.use('/api/links', linksRoutes);
 app.use('/api/publico', publicoRoutes);
 app.use('/api/eventos', eventosRoutes);
+app.use('/api/listas', listasRoutes);
+app.use('/api/alertas', alertasRoutes);
+app.use('/api/notificacoes', notificacoesRoutes);
 app.use('/api', authRoutes);
 
 // Middleware para tratamento de 404
