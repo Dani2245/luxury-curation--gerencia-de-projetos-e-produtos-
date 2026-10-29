@@ -53,8 +53,9 @@ export const fill = async (driver, id, value) => {
 };
 
 export const select = async (driver, id, value) => {
-  const field = await driver.wait(until.elementLocated(By.id(id)), TIMEOUT);
-  await field.findElement(By.css(`option[value="${value}"]`)).click();
+  // As opções podem chegar depois do campo, por uma consulta à API.
+  const option = await driver.wait(until.elementLocated(By.css(`select[id="${id}"] option[value="${value}"]`)), TIMEOUT);
+  await option.click();
 };
 
 export const alertText = async (driver) => {

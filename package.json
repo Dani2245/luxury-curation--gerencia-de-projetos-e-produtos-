@@ -8,7 +8,8 @@
     "build": "vite build",
     "lint": "oxlint",
     "preview": "vite preview",
-    "test:e2e": "mocha \"tests/e2e/**/*.test.js\""
+    "test:e2e": "mocha \"tests/e2e/**/*.test.js\"",
+    "test:e2e:essenciais": "mocha tests/e2e/custodias.test.js tests/e2e/relatorios.test.js tests/e2e/entregas.test.js tests/e2e/transacoes.test.js"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.3.3",

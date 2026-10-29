@@ -17,6 +17,8 @@ import PublicPassport from './pages/PublicPassport';
 import Wishlist from './pages/Wishlist';
 import Alerts from './pages/Alerts';
 import ProtectedRoute from './components/ProtectedRoute';
+import Custody from './components/Custody';
+import Reports from './components/Reports';
 
 const App = () => {
   return (
@@ -39,6 +41,8 @@ const App = () => {
           <Route path="/dashboard/listas/:id" element={<ProtectedRoute roles={['Comprador']}><Wishlist /></ProtectedRoute>} />
           <Route path="/dashboard/alertas" element={<ProtectedRoute roles={['Comprador', 'Vendedor']}><Alerts /></ProtectedRoute>} />
           <Route path="/dashboard/usuarios" element={<ProtectedRoute roles={['Administrador']}><Users /></ProtectedRoute>} />
+          <Route path="/dashboard/custodias" element={<ProtectedRoute roles={['Administrador']}><Custody /></ProtectedRoute>} />
+          <Route path="/dashboard/relatorios" element={<ProtectedRoute roles={['Administrador']}><Reports /></ProtectedRoute>} />
         </Routes>
       </main>
     </div>

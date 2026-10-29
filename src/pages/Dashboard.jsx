@@ -48,9 +48,11 @@ const Dashboard = () => {
             </Link>
           )}
           {user.perfil === 'Administrador' && (
+            <><Link to="/dashboard/custodias" className={linkClass}>Custódia física</Link>
+            <Link to="/dashboard/relatorios" className={linkClass}>Relatórios e financeiro</Link>
             <Link to="/dashboard/usuarios" className={linkClass}>
               <Users className="w-4 h-4" /> Usuários
-            </Link>
+            </Link></>
           )}
           {user.perfil !== 'Perito' && (
             <Link to="/dashboard/transacoes" className={linkClass}>

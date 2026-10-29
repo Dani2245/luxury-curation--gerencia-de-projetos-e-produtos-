@@ -17,6 +17,21 @@ begin
     raise exception 'Prefixo muito curto' using errcode = 'P0001';
   end if;
 
+  if left(p_prefixo, 4) <> 'E2E ' or position('%' in p_prefixo) > 0 or position('_' in p_prefixo) > 0 then
+    raise exception 'Use um prefixo literal iniciado por E2E ' using errcode = 'P0001';
+  end if;
+
+  -- Novos modulos: somente registros vinculados as pecas/descricoes desse teste.
+  -- Blocos dinamicos permitem instalar o apoio antes ou depois das migracoes opcionais.
+  if to_regclass('public.custodias') is not null then
+    execute 'delete from public.custodias c using public.pecas p where c.peca_id = p.id and p.nome like $1'
+      using p_prefixo || '%';
+  end if;
+  if to_regclass('public.lancamentos_financeiros') is not null then
+    execute 'delete from public.lancamentos_financeiros where origem = ''manual'' and descricao like $1'
+      using p_prefixo || '%';
+  end if;
+
   delete from public.pecas where nome like p_prefixo || '%';
   get diagnostics v_total = row_count;
   return v_total;

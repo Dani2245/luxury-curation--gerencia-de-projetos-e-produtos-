@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import webdriver from 'selenium-webdriver';
 import { USERS } from './helpers/config.js';
-import { cleanupE2E, createPublishedPecaApi, issuePassportApi } from './helpers/api.js';
+import { cleanupE2E, createPublishedPecaApi, issuePassportApi, requestAs, completeDeliveryApi } from './helpers/api.js';
 import {
   clearSession, clickButton, clickLabeled, createDriver, fill, loginAndWaitDashboard, open,
   tableRows, waitForText
@@ -135,7 +135,7 @@ describe('RFC04 - Manter Transações', function () {
       await openTransactions(driver);
       await filterByPiece(driver, `${prefix} A`);
       await rowOf(driver, `${prefix} A`);
-      assert.equal((await driver.findElements(By.css(`[aria-label="Confirmar venda de ${prefix} A"]`))).length, 0);
+      assert.equal((await driver.findElements(By.css(`[aria-label="Aceitar proposta de ${prefix} A"]`))).length, 0);
       assert.equal((await driver.findElements(By.css(`[aria-label="Cancelar transação de ${prefix} A"]`))).length, 1);
     });
 
@@ -169,7 +169,7 @@ describe('RFC04 - Manter Transações', function () {
   });
 
   describe('RFS15 - Confirmar Transação e atualização do passaporte (RFC04)', () => {
-    it('o vendedor confirma a venda: comissão gerada e peça vendida', async () => {
+    it('o vendedor aceita e a conferencia aprovada conclui a venda com comissao', async () => {
       await as(driver, USERS.comprador);
       await sendProposal(driver, comPassaporte.id, valor);
 
@@ -177,11 +177,16 @@ describe('RFC04 - Manter Transações', function () {
       await openTransactions(driver);
       await filterByPiece(driver, `${prefix} A`);
       await driver.wait(async () => (await tableRows(driver)).some((r) => r.includes('Aguardando vendedor')), 10000);
-      await clickLabeled(driver, `Confirmar venda de ${prefix} A`);
+      await clickLabeled(driver, `Aceitar proposta de ${prefix} A`);
       await driver.wait(until.alertIsPresent(), 5000);
       await driver.switchTo().alert().accept();
 
-      await waitForText(driver, 'Venda confirmada. O passaporte digital foi atualizado com o novo proprietário.');
+      await waitForText(driver, 'Proposta aceita. Aguardando pagamento simulado.');
+      const accepted = await requestAs(USERS.vendedor, `/transacoes?peca=${comPassaporte.id}&status=aceita`);
+      assert.equal(accepted.data[0].comissao, null);
+      await completeDeliveryApi(accepted.data[0].id);
+      await openTransactions(driver);
+      await filterByPiece(driver, `${prefix} A`);
       await driver.wait(async () => (await tableRows(driver)).some((r) => r.includes('Confirmada')), 10000);
       const confirmed = (await tableRows(driver)).find((r) => r.includes('Confirmada'));
       assert.match(confirmed, /Comissão R\$/);
@@ -231,10 +236,12 @@ describe('RFC04 - Manter Transações', function () {
       await openTransactions(driver);
       await filterByPiece(driver, `${prefix} B`);
       await driver.wait(async () => (await tableRows(driver)).some((r) => r.includes('Aguardando vendedor')), 10000);
-      await clickLabeled(driver, `Confirmar venda de ${prefix} B`);
+      await clickLabeled(driver, `Aceitar proposta de ${prefix} B`);
       await driver.wait(until.alertIsPresent(), 5000);
       await driver.switchTo().alert().accept();
-      await waitForText(driver, 'Venda confirmada.');
+      await waitForText(driver, 'Proposta aceita.');
+      const accepted = await requestAs(USERS.vendedor, `/transacoes?peca=${semPassaporte.id}&status=aceita`);
+      await completeDeliveryApi(accepted.data[0].id);
 
       await as(driver, USERS.admin);
       await openTransactions(driver);

@@ -87,7 +87,22 @@ export const confirmSaleApi = async (transacaoId) => {
   const vendedor = await loginApi(USERS.vendedor.email);
   const { status, data } = await request(`/transacoes/${transacaoId}/confirmar`, { method: 'POST', token: vendedor });
   if (status !== 200) throw new Error(`Confirmação da venda falhou (${status}): ${data?.message}`);
-  return data;
+  return completeDeliveryApi(transacaoId);
+};
+
+// Conclui uma proposta ja aceita, respeitando RFC12/RFC13 (sem atalhos no banco).
+export const completeDeliveryApi = async (transacaoId) => {
+  let result;
+  for (const [user, path, body] of [
+    [USERS.comprador, 'pagamento'],
+    [USERS.vendedor, 'envio', { rastreio: 'E2E entrega de teste' }],
+    [USERS.comprador, 'recebimento'],
+    [USERS.comprador, 'conferencia', { aprovada: true }]
+  ]) {
+    result = await requestAs(user, `/transacoes/${transacaoId}/${path}`, { method: 'POST', body });
+    if (result.status !== 200) throw new Error(`Etapa ${path} falhou (${result.status}): ${result.data?.message}`);
+  }
+  return result.data;
 };
 
 // Campos públicos padrão do link de compartilhamento: identidade do dono e valor ficam privados (RNF04)
@@ -131,9 +146,10 @@ export const deleteAlertsApi = async (user) => {
 export const cleanupE2E = async (prefix = 'E2E ') => {
   if (!SUPABASE_URL || !SUPABASE_KEY) return;
   const token = await loginApi(USERS.admin.email);
-  await fetch(`${SUPABASE_URL}/rest/v1/rpc/e2e_limpar_dados`, {
+  const result = await fetch(`${SUPABASE_URL}/rest/v1/rpc/e2e_limpar_dados`, {
     method: 'POST',
     headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({ p_prefixo: prefix })
   });
+  if (!result.ok) throw new Error(`Limpeza E2E falhou (${result.status}). Execute backend/database/test-support.sql no ambiente de testes.`);
 };

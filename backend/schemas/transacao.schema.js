@@ -1,6 +1,6 @@
 const { z } = require('zod');
 
-const STATUS = ['pendente', 'confirmada', 'cancelada'];
+const { STATUS_TRANSACOES: STATUS } = require('./operacao.schema');
 
 const emptyToUndefined = (val) => (typeof val === 'string' && val.trim() === '' ? undefined : val);
 

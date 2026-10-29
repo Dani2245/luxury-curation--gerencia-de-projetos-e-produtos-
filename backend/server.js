@@ -13,6 +13,8 @@ const eventosRoutes = require('./routes/eventos.routes');
 const listasRoutes = require('./routes/listas.routes');
 const alertasRoutes = require('./routes/alertas.routes');
 const notificacoesRoutes = require('./routes/notificacoes.routes');
+const custodiasRoutes = require('./routes/custodias.routes');
+const financeiroRoutes = require('./routes/financeiro.routes');
 
 const app = express();
 
@@ -40,6 +42,8 @@ app.use('/api/eventos', eventosRoutes);
 app.use('/api/listas', listasRoutes);
 app.use('/api/alertas', alertasRoutes);
 app.use('/api/notificacoes', notificacoesRoutes);
+app.use('/api/custodias', custodiasRoutes);
+app.use('/api/relatorios', financeiroRoutes);
 app.use('/api', authRoutes);
 
 // Middleware para tratamento de 404
