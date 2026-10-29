@@ -37,6 +37,12 @@ export const clickButton = async (driver, text) => {
   await button.click();
 };
 
+export const clickLink = async (driver, text) => {
+  const link = await driver.wait(until.elementLocated(By.xpath(`//a[normalize-space(.)="${text}"]`)), TIMEOUT);
+  await driver.executeScript('arguments[0].scrollIntoView({block: "center"})', link);
+  await link.click();
+};
+
 export const clickLabeled = async (driver, label) => {
   const element = await driver.wait(until.elementLocated(By.css(`[aria-label="${label}"]`)), TIMEOUT);
   await driver.executeScript('arguments[0].scrollIntoView({block: "center"})', element);
