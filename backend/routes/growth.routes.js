@@ -154,4 +154,13 @@ router.get('/painel', validate(painelQuerySchema, 'query'), async (req, res) => 
   res.json(data);
 });
 
+// ---- RF05: relatório de indicadores do hábito, por coorte
+const { habitoQuerySchema } = require('../schemas/habito.schema');
+router.get('/habito', validate(habitoQuerySchema, 'query'), async (req, res) => {
+  const q = req.query;
+  const { data, error } = await req.db.rpc('relatorio_habito', { p_inicio: q.dataInicial, p_fim: q.dataFinal, p_perfil: q.perfil, p_coorte: q.coorte ?? null });
+  if (error) return handleDbError(res, error, 'Erro ao emitir o relatório do hábito');
+  res.json(data);
+});
+
 module.exports = router;
