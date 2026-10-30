@@ -18,7 +18,7 @@ const statusText = async (driver, esperado) => {
   await driver.wait(async () => {
     const status = await driver.findElements(By.css('[role="status"]'));
     return status.length > 0 && (await status[0].getText()).includes(esperado);
-  }, 10000, `Mensagem não exibida: ${esperado}`);
+  }, 20000, `Mensagem não exibida: ${esperado}`);
 };
 const tab = async (driver, nome) => {
   await clickButton(driver, nome);

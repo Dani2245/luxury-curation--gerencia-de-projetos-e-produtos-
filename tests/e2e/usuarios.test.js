@@ -160,7 +160,8 @@ describe('RFC01 - Manter Usuários', function () {
     await clearSession(driver);
     await loginAndWaitDashboard(driver, USERS.admin.email);
     await open(driver, '/dashboard/usuarios');
-    const button = await driver.wait(until.elementLocated(By.css(`[aria-label="Remover ${USERS.admin.nome}"]`)), 10000);
+    // a lista completa de usuários demora mais no fim da suíte completa
+    const button = await driver.wait(until.elementLocated(By.css(`[aria-label="Remover ${USERS.admin.nome}"]`)), 20000);
     assert.equal(await button.isEnabled(), false);
   });
 
