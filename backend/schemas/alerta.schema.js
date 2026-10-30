@@ -1,6 +1,6 @@
 const { z } = require('zod');
 
-const TIPOS = ['peca compativel', 'passaporte incompleto'];
+const TIPOS = ['peca compativel', 'passaporte incompleto', 'conservacao'];
 const FREQUENCIAS = ['diaria', 'semanal', 'mensal'];
 // o e-mail é aceito aqui e recusado pelo banco com a mensagem de canal indisponível nesta versão
 const CANAIS = ['plataforma', 'email'];
