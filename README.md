@@ -66,6 +66,7 @@ npx mocha tests/e2e/links.test.js
 ```
 
 - Configurável por `E2E_BASE_URL` (padrão `http://localhost:5173`), `E2E_API_URL` (padrão `http://localhost:3000`) e `E2E_HEADLESS=false` para ver o navegador.
+- No Windows, os logs internos do Chrome ficam desabilitados no terminal para evitar mensagens repetidas do atualizador. A saída e as falhas do Mocha/Selenium continuam visíveis. Para investigar o navegador, execute com `E2E_CHROME_LOGS=true`.
 - As suítes cobrem RFC01 a RFC04, RFC06, RFC07, RF01, RF02, RFC11 a RFC13 (inclusive os prazos da conferência e da disputa), RFC16 a RFC24, RF04, RF05, RNF05 e RNF06 e criam os próprios dados (peças com prefixo `E2E `). A função `e2e_ajustar_prazo`, também do `test-support.sql`, antecipa prazos de transações de teste para demonstrar prazos próximos e vencidos.
 - Para apagar esses dados ao final (peças vendidas não podem ser removidas pela aplicação), execute a versão atual de `backend/database/test-support.sql` no ambiente de testes, inclusive se já instalou uma versão anterior. Ela inclui a limpeza das novas entidades, restrita aos dados de teste. **Não use esse arquivo em produção.** As suítes devem rodar sequencialmente, sem outra execução simultânea no mesmo banco.
 

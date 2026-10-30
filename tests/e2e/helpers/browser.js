@@ -7,6 +7,12 @@ const TIMEOUT = 10000;
 
 export const createDriver = async () => {
   const options = new chrome.Options().addArguments('--window-size=1366,900', '--lang=pt-BR');
+  // No Windows, o ChromeDriver habilita logs internos do Chrome no terminal,
+  // incluindo tentativas repetidas do atualizador. Preserve a saída dos testes;
+  // habilite E2E_CHROME_LOGS=true para diagnosticar o próprio navegador.
+  if (process.platform === 'win32' && process.env.E2E_CHROME_LOGS !== 'true') {
+    options.excludeSwitches('enable-logging');
+  }
   if (HEADLESS) options.addArguments('--headless=new');
   return new Builder().forBrowser('chrome').setChromeOptions(options).build();
 };
