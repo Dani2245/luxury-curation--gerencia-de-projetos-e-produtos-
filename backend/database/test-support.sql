@@ -96,3 +96,25 @@ $$;
 
 revoke all on function public.e2e_limpar_growth() from public, anon;
 grant execute on function public.e2e_limpar_growth() to authenticated;
+
+-- Envelhece a ultima atualizacao de uma peca de teste da colecao, para demonstrar o lembrete de conservacao (RFC21).
+create or replace function public.e2e_envelhecer_item_colecao(p_item bigint, p_dias integer)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if not public.is_admin() then
+    raise exception 'Acesso negado' using errcode = '42501';
+  end if;
+  update public.colecao_itens set atualizado_em = now() - make_interval(days => p_dias)
+   where id = p_item and nome like 'E2E %';
+  if not found then
+    raise exception 'Somente pecas de teste (E2E)' using errcode = 'P0001';
+  end if;
+end;
+$$;
+
+revoke all on function public.e2e_envelhecer_item_colecao(bigint, integer) from public, anon;
+grant execute on function public.e2e_envelhecer_item_colecao(bigint, integer) to authenticated;
