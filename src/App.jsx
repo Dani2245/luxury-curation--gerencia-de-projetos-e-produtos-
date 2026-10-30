@@ -23,6 +23,8 @@ import Waitlist from './pages/Waitlist';
 import WaitlistAdmin from './pages/WaitlistAdmin';
 import Referrals from './pages/Referrals';
 import Growth from './pages/Growth';
+import Collection from './pages/Collection';
+import Reviews from './pages/Reviews';
 
 const App = () => {
   return (
@@ -51,6 +53,8 @@ const App = () => {
           <Route path="/dashboard/lista-espera" element={<ProtectedRoute roles={['Administrador']}><WaitlistAdmin /></ProtectedRoute>} />
           <Route path="/dashboard/indicacoes" element={<ProtectedRoute><Referrals /></ProtectedRoute>} />
           <Route path="/dashboard/growth" element={<ProtectedRoute roles={['Administrador']}><Growth /></ProtectedRoute>} />
+          <Route path="/dashboard/colecao" element={<ProtectedRoute roles={['Comprador']}><Collection /></ProtectedRoute>} />
+          <Route path="/dashboard/avaliacoes" element={<ProtectedRoute roles={['Comprador', 'Vendedor', 'Administrador']}><Reviews /></ProtectedRoute>} />
         </Routes>
       </main>
     </div>

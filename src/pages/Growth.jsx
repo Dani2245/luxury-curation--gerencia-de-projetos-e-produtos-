@@ -3,12 +3,14 @@ import OperationLayout from '../components/OperationLayout';
 import GrowthPanel from '../components/GrowthPanel';
 import IndicatorsManager from '../components/IndicatorsManager';
 import ExperimentsManager from '../components/ExperimentsManager';
+import HabitReport from '../components/HabitReport';
 import { buttonClass, primaryClass } from '../services/operations';
 
 const ABAS = [
   ['painel', 'Painel de growth', GrowthPanel],
   ['indicadores', 'Indicadores', IndicatorsManager],
-  ['experimentos', 'Experimentos', ExperimentsManager]
+  ['experimentos', 'Experimentos', ExperimentsManager],
+  ['habito', 'Indicadores do hábito', HabitReport]
 ];
 
 // Growth do administrador: painel (RF04), indicadores (RFC19) e experimentos (RFC20)

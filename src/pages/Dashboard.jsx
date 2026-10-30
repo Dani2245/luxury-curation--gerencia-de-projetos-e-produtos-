@@ -72,6 +72,8 @@ const Dashboard = () => {
             </Link>
           )}
           <Link to="/dashboard/indicacoes" className={linkClass}>Indicações</Link>
+          {user.perfil === 'Comprador' && <Link to="/dashboard/colecao" className={linkClass}>Minha coleção</Link>}
+          {user.perfil !== 'Perito' && <Link to="/dashboard/avaliacoes" className={linkClass}>Avaliações</Link>}
           <button
             type="button"
             onClick={handleLogout}
