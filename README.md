@@ -31,9 +31,11 @@ A luxurious, high-end web application for curating rare art, iconic objects, and
    - `schema-rfc06.sql` (custódia);
    - `schema-financeiro.sql` (relatórios e contas);
    - `schema-rfc12-rfc13.sql` (entrega e pagamento retido simulado);
-   - `schema-rfc12-rfc13-prazos.sql` (prazos da conferência e da disputa, consulta e exclusão de pagamentos retidos).
+   - `schema-rfc12-rfc13-prazos.sql` (prazos da conferência e da disputa, consulta e exclusão de pagamentos retidos);
+   - `schema-growth.sql` (lista de espera, indicações, indicadores, experimentos e painel de growth);
+   - `schema-habito.sql` (coleção privada, exportação, avaliações e relatório do hábito).
 
-   Em um projeto existente que já recebeu as migrações de listas e alertas, aplique apenas os quatro últimos scripts; se já recebeu o `schema-rfc12-rfc13.sql`, aplique só o `schema-rfc12-rfc13-prazos.sql`. Eles são aditivos e podem ser reaplicados. Não recrie o banco nem reaplique o seed para atualizar o projeto. Vendas históricas confirmadas continuam concluídas; a migração não inventa pagamentos ou lançamentos financeiros retroativos.
+   Em um projeto existente que já recebeu as migrações de listas e alertas, aplique apenas os scripts seguintes a elas, na ordem acima. Eles são aditivos e podem ser reaplicados. Não recrie o banco nem reaplique o seed para atualizar o projeto. Vendas históricas confirmadas continuam concluídas; a migração não inventa pagamentos ou lançamentos financeiros retroativos.
 3. Inicie a API e o frontend:
    ```bash
    # Terminal 1, dentro de backend/
@@ -64,7 +66,7 @@ npx mocha tests/e2e/links.test.js
 ```
 
 - Configurável por `E2E_BASE_URL` (padrão `http://localhost:5173`), `E2E_API_URL` (padrão `http://localhost:3000`) e `E2E_HEADLESS=false` para ver o navegador.
-- As suítes cobrem RFC01 a RFC04, RFC06, RFC07, RF01, RF02, RFC11 a RFC13 (inclusive os prazos da conferência e da disputa), RFC16, RFC21, RFC22 e RNF06 e criam os próprios dados (peças com prefixo `E2E `). A função `e2e_ajustar_prazo`, também do `test-support.sql`, antecipa prazos de transações de teste para demonstrar prazos próximos e vencidos.
+- As suítes cobrem RFC01 a RFC04, RFC06, RFC07, RF01, RF02, RFC11 a RFC13 (inclusive os prazos da conferência e da disputa), RFC16 a RFC24, RF04, RF05, RNF05 e RNF06 e criam os próprios dados (peças com prefixo `E2E `). A função `e2e_ajustar_prazo`, também do `test-support.sql`, antecipa prazos de transações de teste para demonstrar prazos próximos e vencidos.
 - Para apagar esses dados ao final (peças vendidas não podem ser removidas pela aplicação), execute a versão atual de `backend/database/test-support.sql` no ambiente de testes, inclusive se já instalou uma versão anterior. Ela inclui a limpeza das novas entidades, restrita aos dados de teste. **Não use esse arquivo em produção.** As suítes devem rodar sequencialmente, sem outra execução simultânea no mesmo banco.
 
 ## Regras de negócio implementadas
@@ -76,6 +78,24 @@ npx mocha tests/e2e/links.test.js
 - **Eventos de uso (RNF06):** login, consultas ao passaporte (logado, por link ou QR), emissão, atualização e transferência do passaporte, links, cadastro de peças, decisões da curadoria e transações são registrados com data, origem e indicação de gatilho externo (link, QR, alerta ou e-mail). A consulta de um usuário ao mesmo passaporte conta uma vez a cada 30 minutos. O administrador vê no painel apenas o resumo agregado por período.
 - **Lista de desejos (RFC22):** o comprador cria listas por categoria e faixa de valor ou salva uma peça consultada (em lista existente ou nova). A lista mostra as peças salvas com a situação (disponível, em negociação, vendida ou indisponível) e as peças publicadas pela curadoria que combinam com os critérios, destacando como novas as publicadas depois da criação da lista. Excluir a lista exclui os alertas vinculados. O administrador vê só a demanda agregada por categoria e as peças mais salvas.
 - **Alertas e lembretes (RFC21):** o comprador recebe alerta de peça nova compatível com uma lista (semanal por padrão) e o vendedor, lembrete das peças do estoque com passaporte incompleto, isto é, sem passaporte, laudo pericial, nota fiscal ou fotografia (mensal por padrão). O envio é feito na plataforma, como notificação, quando o usuário entra e só se houver novidade; nenhum aviso se repete antes do próximo período. Todo alerta pode ser desligado com uma ação, alterado (frequência e canal; o e-mail fica para uma próxima versão) ou excluído. O administrador vê a taxa de desativação (alertas desligados ou excluídos enquanto ligados, sobre os criados). O lembrete de conservação depende da coleção privada (RFC23) e entra junto com ela.
+
+## Growth e hábito
+
+| Requisito | Implementação e acesso | Demonstração automatizada |
+| --- | --- | --- |
+| RFC17 / RFS57–60 e RFS54 | Página pública **/lista-de-espera** (landing e passaporte público levam a ela); administrador → **Lista de espera** | `tests/e2e/listaespera.test.js` |
+| RFC18 / RFS61–64 | Painel → **Indicações**, para todos os perfis; origem da conta em **Usuários** | `tests/e2e/indicacoes.test.js` |
+| RFC19, RFC20 e RF04 | Administrador → **Growth**: painel, indicadores e experimentos | `tests/e2e/growth.test.js` |
+| RFC23, RNF05, RFC24 e RF05 | Comprador → **Minha coleção**; **Avaliações**; administrador → Growth → **Indicadores do hábito** | `tests/e2e/habito.test.js` |
+
+- **Lista de espera (RFC17):** o visitante se inscreve sem cadastro, com perfil, categorias de interesse e consentimento. A versão da página (`?v=`, a versão `b` inclui bolsas, experimento X5) e a origem (`?origem=` ou `?utm_source=`) são registradas. O administrador filtra por perfil, categoria, versão, origem e período, vê o total por versão, edita dados e status (aguardando, convidado, cadastrado) e exclui a inscrição. A inscrição feita pelo link de um passaporte conta como cadastro originado do link (RFS54).
+- **Indicações e origem (RFC18):** qualquer perfil indica um comprador ou vendedor e recebe o link do convite (lista de espera com o código). Quando o administrador cria a conta com o mesmo e-mail, a indicação passa a "conta criada", e o primeiro login a "conta ativada". Toda conta nova registra a origem: indicação, link, lista de espera (automáticas) ou conteúdo, anúncio e direto (informadas pelo administrador). Só a indicação não aceita pode ser corrigida ou cancelada.
+- **Indicadores (RFC19) e painel (RF04):** o catálogo traz a North Star (passaportes vivos em 90 dias), as quatro métricas de proteção e os indicadores do funil do Plano de Growth (A1, A2, A4, A5, B1, B3, R1, R3, R4, F1 a F3, I2, I4, I5), cada um com fórmula calculada dos eventos de uso, meta e frequência. Alterar fórmula, meta ou frequência guarda o histórico; desativar preserva as medições. O painel, por período, etapa e lado, mostra valor, meta e status e os experimentos concluídos com resultado e decisão.
+- **Experimentos (RFC20):** hipótese, etapa, indicador, critério de sucesso e notas de 1 a 10; o ICE Score é a média das três notas. O backlog X1 a X15 do Plano de Growth já vem cadastrado. Concluir exige resultado e decisão; só experimentos em backlog podem ser excluídos.
+- **Coleção privada (RFC23) e exportação (RNF05):** o comprador registra as peças que já possui, uma a uma ou importando a planilha (CSV: nome; categoria; estado; valor; manutenção) como rascunhos, sem anunciá-las. Só o dono vê a coleção, o valor de referência e o que falta para o passaporte (fotografias, nota fiscal, laudo, certificado). Cada atualização vai para o histórico; a peça pode ter o passaporte solicitado e, depois disso, não pode ser excluída. O proprietário exporta a coleção e os passaportes das peças que possui em JSON.
+- **Avaliações (RFC24):** depois da transação concluída, comprador e vendedor avaliam um ao outro uma vez (nota de 1 a 5 e comentário). Cada um vê as avaliações recebidas e a nota média; o autor altera o comentário em até 7 dias; o administrador remove avaliação ofensiva com o motivo, e ela sai da reputação.
+- **Indicadores do hábito (RF05):** por coorte (mês de entrada), para comprador, proprietário ou vendedor: usuários habituais (sessão em todas as semanas do período; para o proprietário, atualização em todos os meses), dias até o primeiro investimento, sessões sem gatilho externo, passaportes atualizados em 90 dias, consultas vindas de link e desativação de alertas.
+- **Pendente:** o lembrete de conservação do RFC21 ainda não foi implementado.
 
 ## Entrega dos requisitos essenciais
 
