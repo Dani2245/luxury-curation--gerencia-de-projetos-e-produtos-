@@ -111,6 +111,10 @@ const Collection = () => {
                   <p className="text-white">{i.nome} · {i.categoria} {i.status !== 'registrado' && <span className="text-[#D3BE96]">({i.status})</span>}</p>
                   <p className="text-gray-400">Estado: {i.estadoConservacao} · Manutenção: {displayDate(i.ultimaManutencao)} · {i.visibilidade}{i.valorReferencia !== null && ` · ${formatCurrency(i.valorReferencia)}`}</p>
                   <p className="text-gray-500 text-xs">Atualizada em {formatDateTime(i.atualizadoEm)}</p>
+                  {/* mesmo critério do lembrete de conservação (RFC21) */}
+                  {Date.now() - new Date(i.atualizadoEm).getTime() > 90 * 24 * 60 * 60 * 1000 && (
+                    <p data-testid={`colecao-${i.id}-conservacao`} className="text-orange-300 text-xs">Estado de conservação sem atualização há mais de 90 dias</p>
+                  )}
                   <p data-testid={`colecao-${i.id}-pendencias`} className={i.pendencias.length ? 'text-orange-300 text-xs' : 'text-emerald-400 text-xs'}>
                     {i.pendencias.length ? `Para o passaporte falta: ${i.pendencias.join(', ')}` : 'Pronta para o passaporte'}
                   </p>

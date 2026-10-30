@@ -16,7 +16,8 @@ export const formatCriterios = (lista) => {
 
 export const TIPOS_ALERTA = {
   'peca compativel': 'Peça compatível com lista de desejos',
-  'passaporte incompleto': 'Passaportes incompletos no estoque'
+  'passaporte incompleto': 'Passaportes incompletos no estoque',
+  conservacao: 'Conservação das peças da coleção'
 };
 
 export const FREQUENCIAS = { diaria: 'Diária', semanal: 'Semanal', mensal: 'Mensal' };

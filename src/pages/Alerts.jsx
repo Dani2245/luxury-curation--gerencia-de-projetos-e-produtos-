@@ -33,6 +33,7 @@ const Alerts = () => {
   const [incompletos, setIncompletos] = useState([]);
   const [listaId, setListaId] = useState(searchParams.get('lista') || '');
   const [frequencia, setFrequencia] = useState(comprador ? 'semanal' : 'mensal');
+  const [frequenciaConservacao, setFrequenciaConservacao] = useState('mensal');
   const [canal, setCanal] = useState('plataforma');
   const [edicao, setEdicao] = useState({});
   const [historico, setHistorico] = useState({});
@@ -83,6 +84,11 @@ const Alerts = () => {
       () => apiFetch('/alertas', { method: 'POST', body: { tipo, listaId: comprador ? listaSelecionada : undefined, frequencia, canal } }),
       'Alerta criado.'
     );
+  };
+
+  const handleCreateConservacao = (e) => {
+    e.preventDefault();
+    run(() => apiFetch('/alertas', { method: 'POST', body: { tipo: 'conservacao', frequencia: frequenciaConservacao } }), 'Lembrete de conservação criado.');
   };
 
   const toggleHistorico = async (alerta) => {
@@ -170,6 +176,29 @@ const Alerts = () => {
           </>
         )}
       </form>
+
+      {/* RFC21: lembrete de atualizar o estado de conservação das peças da coleção privada (RFC23) */}
+      {comprador && (
+        <form onSubmit={handleCreateConservacao} aria-label="Lembrete de conservação" className="bg-[#111] border border-gray-800 p-6 space-y-4 mb-10">
+          <h2 className="text-xl font-serif">Lembrete de conservação</h2>
+          <p className="text-gray-400 font-sans text-sm">Lembra das peças da sua coleção cujo estado de conservação não é atualizado há mais de 90 dias.</p>
+          {alertas.some((a) => a.tipo === 'conservacao') ? (
+            <p className="text-gray-400 font-sans text-sm">Seu lembrete de conservação já está configurado abaixo.</p>
+          ) : (
+            <div className="flex flex-wrap items-end gap-6">
+              <div>
+                <label htmlFor="alerta-conservacao-frequencia" className={labelClass}>Frequência</label>
+                <select id="alerta-conservacao-frequencia" value={frequenciaConservacao} onChange={(e) => setFrequenciaConservacao(e.target.value)} className={inputClass}>
+                  {Object.entries(FREQUENCIAS).map(([valor, rotulo]) => <option key={valor} value={valor}>{rotulo}</option>)}
+                </select>
+              </div>
+              <button type="submit" className="bg-white text-black px-8 py-3 font-sans uppercase tracking-widest text-xs font-medium hover:bg-gray-200 transition-colors">
+                Criar lembrete de conservação
+              </button>
+            </div>
+          )}
+        </form>
+      )}
 
       <section aria-labelledby="meus-alertas" className="mb-10">
         <h2 id="meus-alertas" className="text-2xl font-serif mb-4">Meus alertas</h2>
