@@ -88,6 +88,9 @@ begin
   delete from public.indicacoes where contato like 'e2e-%';
   delete from public.experimentos where titulo like 'E2E %';
   delete from public.indicadores where nome like 'E2E %';
+  if to_regclass('public.colecao_itens') is not null then
+    delete from public.colecao_itens where nome like 'E2E %';
+  end if;
 end;
 $$;
 
