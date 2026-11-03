@@ -1,5 +1,6 @@
 import React, { useCallback, useRef, useState } from 'react';
 import ItemCard from '../components/ItemCard';
+import { useCategories } from '../services/categories';
 import { apiFetch, getUser } from '../services/api';
 
 const inputClass = 'w-full bg-[#111] border border-gray-800 rounded-none py-2 px-3 text-gray-300 focus:outline-none focus:border-gray-500 font-sans transition-colors';
@@ -7,6 +8,7 @@ const labelClass = 'block text-gray-500 font-sans text-xs tracking-widest upperc
 
 // Consultar Peça (RFS02): filtros por categoria, faixa de valor e vendedor
 const Catalog = () => {
+  const { categories, error: categoryError } = useCategories();
   const isAdmin = getUser()?.perfil === 'Administrador';
   const [items, setItems] = useState([]);
   const [filters, setFilters] = useState({ categoria: '', valorMin: '', valorMax: '', vendedor: '', publicacao: '' });
@@ -64,14 +66,13 @@ const Catalog = () => {
         </p>
       </div>
 
+      {categoryError && <p role="alert">{categoryError}</p>}
       <form onSubmit={handleSubmit} className="grid grid-cols-2 md:grid-cols-6 gap-4 mb-12 border-b border-gray-800 pb-8 items-end">
         <div className="col-span-2 md:col-span-1">
           <label htmlFor="f-categoria" className={labelClass}>Categoria</label>
           <select id="f-categoria" value={filters.categoria} onChange={(e) => setFilters({ ...filters, categoria: e.target.value })} className={`${inputClass} appearance-none`}>
             <option value="">Todas</option>
-            <option value="obra de arte">Obra de Arte</option>
-            <option value="joia">Joia</option>
-            <option value="relógio">Relógio</option>
+            {categories.map((c) => <option key={c.id} value={c.nome}>{c.nome}</option>)}
           </select>
         </div>
         <div>

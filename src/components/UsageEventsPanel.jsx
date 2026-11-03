@@ -33,7 +33,13 @@ const ROTULOS = {
   alerta_reativado: 'Alertas religados',
   alerta_removido: 'Alertas excluídos',
   alerta_enviado: 'Alertas enviados na plataforma',
-  alerta_aberto: 'Alertas abertos pelo usuário'
+  alerta_aberto: 'Alertas abertos pelo usuário',
+  laudo_assinado: 'Laudos assinados pelo perito',
+  laudo_corrigido: 'Laudos corrigidos antes da vinculação',
+  laudo_vinculado: 'Laudos vinculados ao passaporte',
+  laudo_removido: 'Laudos incorretos removidos',
+  laudo_consulta: 'Aberturas de laudos no passaporte',
+  growth_evidencia_registrada: 'Evidências de pilotos registradas'
 };
 
 const inputClass = 'w-full bg-[#0a0a0a] border border-gray-700 px-4 py-2.5 text-white focus:outline-none focus:border-[#A69076] transition-colors font-sans';

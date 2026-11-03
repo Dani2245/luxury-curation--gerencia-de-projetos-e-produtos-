@@ -32,6 +32,13 @@ begin
       using p_prefixo || '%';
   end if;
 
+  if to_regclass('public.laudos') is not null then
+    if to_regclass('public.growth_evidencias') is not null then
+      execute 'delete from public.growth_evidencias where participante like $1' using p_prefixo || '%';
+      execute 'delete from public.growth_exemplo e using public.passaporte_links l, public.passaportes pp, public.pecas p where e.link_id = l.id and l.passaporte_id = pp.id and pp.peca_id = p.id and p.nome like $1' using p_prefixo || '%';
+    end if;
+    execute 'delete from public.laudos l using public.pecas p where l.peca_id = p.id and p.nome like $1' using p_prefixo || '%';
+  end if;
   delete from public.pecas where nome like p_prefixo || '%';
   get diagnostics v_total = row_count;
   return v_total;
@@ -84,6 +91,9 @@ begin
   if to_regclass('public.lista_espera') is null then
     return;
   end if;
+  if to_regclass('public.growth_evidencias') is not null then
+    execute 'delete from public.growth_evidencias where participante like ''E2E %''';
+  end if;
   delete from public.lista_espera where email like 'e2e-%';
   delete from public.indicacoes where contato like 'e2e-%';
   delete from public.experimentos where titulo like 'E2E %';
@@ -118,3 +128,17 @@ $$;
 
 revoke all on function public.e2e_envelhecer_item_colecao(bigint, integer) from public, anon;
 grant execute on function public.e2e_envelhecer_item_colecao(bigint, integer) to authenticated;
+
+-- Janela do A5: só laudos de peças E2E ainda não vinculados a passaporte.
+create or replace function public.e2e_datar_laudo(p_id bigint, p_data timestamptz)
+returns void language plpgsql security definer set search_path = public as $$
+begin
+  if not public.is_admin() then raise exception 'Acesso negado' using errcode = '42501'; end if;
+  if not exists(select 1 from public.laudos l join public.pecas p on p.id = l.peca_id where l.id = p_id and p.nome like 'E2E %' and l.passaporte_id is null) then
+    raise exception 'Somente laudos E2E não vinculados' using errcode = 'P0001'; end if;
+  update public.laudos set assinado_em = p_data where id = p_id;
+  update public.laudos set assinatura = public.laudo_assinar(p_id) where id = p_id;
+end;
+$$;
+revoke all on function public.e2e_datar_laudo(bigint,timestamptz) from public, anon;
+grant execute on function public.e2e_datar_laudo(bigint,timestamptz) to authenticated;

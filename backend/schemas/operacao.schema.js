@@ -20,7 +20,7 @@ const period = { dataInicial: date, dataFinal: date };
 const validPeriod = (q) => q.dataInicial <= q.dataFinal;
 const periodError = { message: 'A data inicial não pode ser maior que a final', path: ['dataInicial'] };
 const transactionReportSchema = z.object({ ...period,
-  categoria: z.preprocess(emptyToUndefined, z.enum(['obra de arte', 'joia', 'relógio']).optional()),
+  categoria: z.preprocess(emptyToUndefined, z.string().trim().min(1).max(80).optional()),
   status: z.preprocess(emptyToUndefined, z.enum(STATUS_TRANSACOES).optional())
 }).refine(validPeriod, periodError);
 const financialReportSchema = z.object({ ...period,

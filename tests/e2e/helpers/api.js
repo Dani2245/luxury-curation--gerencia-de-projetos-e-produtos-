@@ -21,6 +21,18 @@ export const loginApi = async (email, password = PASSWORD) => {
   return data.token;
 };
 
+// As chamadas de apoio reutilizam uma sessão curta, sem refazer login em cada
+// leitura da API. loginApi e os testes de autenticação continuam sem cache.
+const fixtureTokens = new Map();
+const fixtureToken = async (email) => {
+  const cached = fixtureTokens.get(email);
+  if (cached?.until > Date.now()) return cached.token;
+  const token = await loginApi(email);
+  const expires = JSON.parse(Buffer.from(token.split('.')[1], 'base64url').toString()).exp * 1000;
+  fixtureTokens.set(email, { token, until: Math.min(Date.now() + 300000, expires - 30000) });
+  return token;
+};
+
 // Remoção de dados criados pelos testes, para a suíte ser repetível
 export const deletePecasByName = async (nome) => {
   const token = await loginApi(USERS.vendedor.email);
@@ -60,10 +72,11 @@ export const createPublishedPecaApi = async ({ nome, categoria = 'relógio', val
   const vendedor = await loginApi(USERS.vendedor.email);
   const peca = await multipart('/pecas', {
     token: vendedor,
-    fields: { nome, categoria, valorPretendido: valor, descricao: 'Peça criada pelos testes end-to-end' }
+    fields: { nome, categoria, privada: false, valorPretendido: valor, descricao: 'Peça criada pelos testes end-to-end' }
   });
   const admin = await loginApi(USERS.admin.email);
-  await request(`/pecas/${peca.id}/publicacao`, { method: 'PATCH', token: admin, body: { publicacao: 'publicada' } });
+  const published = await request(`/pecas/${peca.id}/publicacao`, { method: 'PATCH', token: admin, body: { publicacao: 'publicada' } });
+  if (published.status !== 200) throw new Error(`Publicação da peça de teste falhou (${published.status}): ${published.data?.message}`);
   return peca;
 };
 
@@ -116,7 +129,11 @@ export const createLinkApi = async (passaporteId, { user = USERS.vendedor, campo
 };
 
 // Requisição autenticada com o perfil informado, para verificar respostas da API (ex.: 403)
-export const requestAs = async (user, path, options = {}) => request(path, { ...options, token: await loginApi(user.email) });
+export const requestAs = async (user, path, options = {}) => {
+  const result = await request(path, { ...options, token: await fixtureToken(user.email) });
+  if (result.status === 401) fixtureTokens.delete(user.email);
+  return result;
+};
 
 // Listas de desejos do comprador de teste (RFC22)
 export const createListApi = async (body) => {

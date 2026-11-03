@@ -23,7 +23,11 @@ const bodyText = (driver) => driver.executeScript('return document.body.innerTex
 
 const openPassport = async (driver, pecaId) => {
   await open(driver, `/peca/${pecaId}/passaporte`);
-  await waitForText(driver, 'Assinatura válida');
+  try { await waitForText(driver, 'Assinatura válida'); }
+  catch (error) {
+    error.message += `\nPágina exibida: ${await driver.getCurrentUrl()}\n${(await bodyText(driver)).slice(0, 1500)}`;
+    throw error;
+  }
 };
 
 // Visitante sem cadastro: sessão limpa antes de abrir o link

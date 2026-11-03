@@ -38,6 +38,8 @@ app.get('/api/health', (req, res) => {
 
 // Rotas da Aplicação
 app.use('/api/pecas', pecasRoutes);
+app.use('/api/categorias', require('./routes/categorias.routes'));
+app.use('/api/laudos', require('./routes/laudos.routes'));
 app.use('/api/usuarios', usuariosRoutes);
 app.use('/api/passaportes', passaportesRoutes);
 app.use('/api/transacoes', transacoesRoutes);
@@ -52,6 +54,7 @@ app.use('/api/relatorios', financeiroRoutes);
 app.use('/api/lista-espera', listaEsperaRoutes);
 app.use('/api/indicacoes', indicacoesRoutes);
 app.use('/api/growth', growthRoutes);
+app.use('/api/pilotos', require('./routes/pilotos.routes'));
 app.use('/api/colecao', colecaoRoutes);
 app.use('/api/avaliacoes', avaliacoesRoutes);
 app.use('/api', authRoutes);

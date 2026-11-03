@@ -17,7 +17,7 @@ const CreateItem = () => {
       <div className="min-h-screen flex flex-col items-center justify-center pt-20 px-4">
         <CheckCircle className="w-16 h-16 text-emerald-400 mb-6" />
         <h2 className="text-3xl font-serif text-white mb-2">Peça Registrada</h2>
-        <p className="text-gray-400 font-sans text-center">Seu anúncio foi enviado para validação do administrador antes da publicação.</p>
+        <p className="text-gray-400 font-sans text-center">A peça foi salva conforme sua preferência de privacidade. A publicação no catálogo depende da sua autorização e da curadoria.</p>
       </div>
     );
   }

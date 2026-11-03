@@ -83,7 +83,7 @@ const SellerItemsPanel = () => {
             </thead>
             <tbody>
               {items.map((item) => {
-                const label = PUBLICACAO_LABEL[item.publicacao];
+                const label = item.privada ? { text: 'Acervo privado', className: 'text-blue-300' } : PUBLICACAO_LABEL[item.publicacao];
                 return (
                   <tr key={item.id} className="border-t border-gray-800">
                     <td className="px-4 py-3 text-white">

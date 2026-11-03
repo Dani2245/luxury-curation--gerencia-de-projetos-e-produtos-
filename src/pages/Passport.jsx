@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, FileText, ShieldAlert, ShieldCheck } from 'lucide-react';
 import DocumentUpload from '../components/DocumentUpload';
+import PassportAppraisals from '../components/PassportAppraisals';
 import ShareLinksPanel from '../components/ShareLinksPanel';
 import { ApiError, apiFetch, formatDate, formatDateTime, getUser } from '../services/api';
 
@@ -181,6 +182,7 @@ const Passport = () => {
 
           {canShare && <ShareLinksPanel passaporteId={passaporte.id} />}
 
+          <PassportAppraisals pecaId={id} />
           <section aria-labelledby="documentos" className="mb-8">
             <h2 id="documentos" className="text-2xl font-serif mb-4">Documentos</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

@@ -3,6 +3,7 @@ const router = express.Router();
 const validate = require('../middlewares/validate');
 const { authenticate, authorize } = require('../middlewares/auth');
 const { handleDbError } = require('../utils/db-error');
+const { resolveFotos } = require('../utils/peca-fotos');
 const {
   createListaSchema,
   updateListaSchema,
@@ -72,6 +73,10 @@ router.get('/:id', ...comprador, validate(listaIdParamSchema, 'params'), async (
   ]);
   const failed = [salvas, compativeis].find((r) => r.error);
   if (failed) return handleDbError(res, failed.error, 'Erro ao consultar as peças da lista de desejos');
+
+  for (const p of [...salvas.data, ...compativeis.data]) {
+    if (p.fotografia) [p.fotografia] = await resolveFotos(req.db, [p.fotografia]);
+  }
 
   res.json({
     ...formatLista(lista),

@@ -82,6 +82,7 @@ const ItemDetails = () => {
             <p>{item.descricao || 'Sem descrição informada.'}</p>
           </div>
 
+          <dl className="font-sans text-sm mb-6">{Object.entries(item.atributos || {}).filter(([, v]) => v).map(([key, value]) => <div key={key} className="flex gap-4"><dt className="text-gray-500">{key}</dt><dd>{value}</dd></div>)}</dl>
           {/* Passaporte Digital Section */}
           <div className="bg-[#111] border border-gray-800 p-6 md:p-8 mb-8">
             <div className="flex items-center gap-3 mb-6">

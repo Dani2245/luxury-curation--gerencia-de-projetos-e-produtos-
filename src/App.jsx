@@ -25,6 +25,10 @@ import Referrals from './pages/Referrals';
 import Growth from './pages/Growth';
 import Collection from './pages/Collection';
 import Reviews from './pages/Reviews';
+import Categories from './components/Categories';
+import Appraisals from './components/Appraisals';
+import PassportExample from './components/PassportExample';
+import FoundingExperts from './components/FoundingExperts';
 
 const App = () => {
   return (
@@ -34,11 +38,15 @@ const App = () => {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/landing" element={<Landing />} />
+          <Route path="/passaporte-exemplo" element={<PassportExample />} />
+          <Route path="/peritos-fundadores" element={<FoundingExperts />} />
           <Route path="/login" element={<Auth />} />
           <Route path="/p/:token" element={<PublicPassport />} />
           <Route path="/catalogo" element={<ProtectedRoute roles={['Comprador', 'Administrador']}><Catalog /></ProtectedRoute>} />
           <Route path="/peca/:id" element={<ProtectedRoute roles={['Comprador', 'Administrador', 'Vendedor', 'Perito']}><ItemDetails /></ProtectedRoute>} />
           <Route path="/peca/:id/passaporte" element={<ProtectedRoute roles={['Comprador', 'Administrador', 'Vendedor', 'Perito']}><Passport /></ProtectedRoute>} />
+          <Route path="/dashboard/categorias" element={<ProtectedRoute roles={['Administrador', 'Vendedor']}><Categories /></ProtectedRoute>} />
+          <Route path="/dashboard/laudos" element={<ProtectedRoute><Appraisals /></ProtectedRoute>} />
           <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
           <Route path="/dashboard/nova-peca" element={<ProtectedRoute roles={['Vendedor']}><CreateItem /></ProtectedRoute>} />
           <Route path="/dashboard/peca/:id/editar" element={<ProtectedRoute roles={['Vendedor']}><EditItem /></ProtectedRoute>} />

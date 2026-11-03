@@ -5,6 +5,7 @@ const validate = require('../middlewares/validate');
 const { authenticate, authorize } = require('../middlewares/auth');
 const { uploadFotografias } = require('../middlewares/upload');
 const { handleDbError } = require('../utils/db-error');
+const { resolveFotos, PREFIX: PRIVATE_PREFIX, BUCKET: PRIVATE_BUCKET } = require('../utils/peca-fotos');
 const {
   pecaSchema,
   listPecasQuerySchema,
@@ -16,13 +17,16 @@ const BUCKET = 'pecas';
 const EXTENSOES = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' };
 
 // Normaliza colunas snake_case do Postgres para o camelCase esperado pelo React
-const formatPeca = (item) => ({
+const formatPeca = async (db, item) => ({
   id: item.id,
   nome: item.nome,
   categoria: item.categoria,
+  atributos: item.atributos || {},
+  privada: item.privada,
   descricao: item.descricao,
   valor: Number(item.valor_pretendido),
-  fotografias: item.fotografias || [],
+  fotografias: (await resolveFotos(db, item.fotografias || [])).filter(Boolean),
+  fotografiasRefs: item.fotografias || [],
   vendedor: { id: item.vendedor_id, nome: item.vendedor_nome },
   proprietarioId: item.proprietario_id,
   publicacao: item.publicacao,
@@ -44,6 +48,8 @@ const storagePathFromUrl = (url) => {
 };
 
 const removeFotografias = async (db, urls) => {
+  const privatePaths = urls.filter((url) => url.startsWith(PRIVATE_PREFIX)).map((url) => url.slice(PRIVATE_PREFIX.length));
+  if (privatePaths.length) await db.storage.from(PRIVATE_BUCKET).remove(privatePaths);
   const paths = urls.map(storagePathFromUrl).filter(Boolean);
   if (paths.length === 0) return;
   const { error } = await db.storage.from(BUCKET).remove(paths);
@@ -53,16 +59,17 @@ const removeFotografias = async (db, urls) => {
 const uploadArquivos = async (req) => {
   const urls = [];
   const paths = [];
+  const bucket = req.body.privada ? PRIVATE_BUCKET : BUCKET;
 
   for (const file of req.files || []) {
     const path = `${req.user.id}/${crypto.randomUUID()}.${EXTENSOES[file.mimetype]}`;
-    const { error } = await req.db.storage.from(BUCKET).upload(path, file.buffer, { contentType: file.mimetype });
+    const { error } = await req.db.storage.from(bucket).upload(path, file.buffer, { contentType: file.mimetype });
     if (error) {
-      await req.db.storage.from(BUCKET).remove(paths);
+      await req.db.storage.from(bucket).remove(paths);
       throw Object.assign(new Error('Erro ao enviar as fotografias'), { cause: error });
     }
     paths.push(path);
-    urls.push(req.db.storage.from(BUCKET).getPublicUrl(path).data.publicUrl);
+    urls.push(bucket === PRIVATE_BUCKET ? `${PRIVATE_PREFIX}${path}` : req.db.storage.from(BUCKET).getPublicUrl(path).data.publicUrl);
   }
 
   return urls;
@@ -87,7 +94,7 @@ router.get('/minhas', authenticate, authorize('Vendedor'), async (req, res) => {
     .order('nome', { ascending: true });
   if (error) return handleDbError(res, error, 'Erro ao consultar peças');
 
-  res.json(data.map(formatPeca));
+  res.json(await Promise.all(data.map((p) => formatPeca(req.db, p))));
 });
 
 // GET /api/pecas/pendentes - Fila de anúncios aguardando validação do administrador (RFC02)
@@ -96,10 +103,11 @@ router.get('/pendentes', authenticate, authorize('Administrador'), async (req, r
     .from('vw_pecas')
     .select('*')
     .eq('publicacao', 'pendente')
+    .eq('privada', false)
     .order('nome', { ascending: true });
   if (error) return handleDbError(res, error, 'Erro ao consultar anúncios pendentes');
 
-  res.json(data.map(formatPeca));
+  res.json(await Promise.all(data.map((p) => formatPeca(req.db, p))));
 });
 
 // GET /api/pecas - Consultar peças por categoria, faixa de valor e vendedor (RFS02)
@@ -123,7 +131,7 @@ router.get(
     const { data, error } = await query;
     if (error) return handleDbError(res, error, 'Erro ao consultar peças');
 
-    res.json(data.map(formatPeca));
+    res.json(await Promise.all(data.map((p) => formatPeca(req.db, p))));
   }
 );
 
@@ -138,7 +146,7 @@ router.get(
     if (error) return handleDbError(res, error, 'Erro ao buscar peça');
     if (!data) return res.status(404).json({ message: 'Peça não encontrada' });
 
-    res.json(formatPeca(data));
+    res.json(await formatPeca(req.db, data));
   }
 );
 
@@ -150,7 +158,7 @@ router.post(
   uploadFotografias,
   validate(pecaSchema),
   async (req, res) => {
-    const { nome, categoria, descricao, valorPretendido } = req.body;
+    const { nome, categoria, descricao, valorPretendido, atributos, privada } = req.body;
 
     const fotografias = await uploadOrFail(req, res);
     if (!fotografias) return;
@@ -160,6 +168,8 @@ router.post(
       .insert({
         nome,
         categoria,
+        atributos,
+        privada,
         descricao,
         valor_pretendido: valorPretendido,
         fotografias,
@@ -174,7 +184,7 @@ router.post(
     }
 
     const { data: peca } = await fetchPeca(req.db, data.id);
-    res.status(201).json(formatPeca(peca));
+    res.status(201).json(await formatPeca(req.db, peca));
   }
 );
 
@@ -199,7 +209,7 @@ router.put(
       return res.status(409).json({ message: 'A peça está em negociação e não pode ser editada' });
     }
 
-    const { nome, categoria, descricao, valorPretendido, fotografiasMantidas } = req.body;
+    const { nome, categoria, descricao, valorPretendido, fotografiasMantidas, atributos, privada } = req.body;
 
     const novas = await uploadOrFail(req, res);
     if (!novas) return;
@@ -207,26 +217,47 @@ router.put(
     const atuais = atual.fotografias || [];
     const mantidas = fotografiasMantidas ? atuais.filter((url) => fotografiasMantidas.includes(url)) : atuais;
     const removidas = atuais.filter((url) => !mantidas.includes(url));
+    const privateCopies = [];
+    const finalKept = [];
+    try {
+      for (const ref of mantidas) {
+        if (!privada || ref.startsWith(PRIVATE_PREFIX)) { finalKept.push(ref); continue; }
+        const path = storagePathFromUrl(ref);
+        if (!path) throw { code: 'P0001', message: 'Remova as fotografias de exemplo antes de tornar esta peça privada' };
+        const original = await req.db.storage.from(BUCKET).download(path);
+        if (original.error) throw original.error;
+        const destination = `${req.user.id}/${crypto.randomUUID()}.${EXTENSOES[original.data.type] || 'jpg'}`;
+        const copy = await req.db.storage.from(PRIVATE_BUCKET).upload(destination, original.data, { contentType: original.data.type });
+        if (copy.error) throw copy.error;
+        const privateRef = `${PRIVATE_PREFIX}${destination}`;
+        finalKept.push(privateRef); privateCopies.push(privateRef); removidas.push(ref);
+      }
+    } catch (error) {
+      await removeFotografias(req.db, [...novas, ...privateCopies]);
+      return handleDbError(res, error, 'Erro ao proteger fotografias da peça');
+    }
 
     const { error } = await req.db
       .from('pecas')
       .update({
         nome,
         categoria,
+        atributos,
+        privada,
         descricao,
         valor_pretendido: valorPretendido,
-        fotografias: [...mantidas, ...novas]
+        fotografias: [...finalKept, ...novas]
       })
       .eq('id', req.params.id);
 
     if (error) {
-      await removeFotografias(req.db, novas);
+      await removeFotografias(req.db, [...novas, ...privateCopies]);
       return handleDbError(res, error, 'Erro ao atualizar peça');
     }
 
     await removeFotografias(req.db, removidas);
     const { data: peca } = await fetchPeca(req.db, req.params.id);
-    res.json(formatPeca(peca));
+    res.json(await formatPeca(req.db, peca));
   }
 );
 
@@ -247,7 +278,7 @@ router.patch(
     if (!data || data.length === 0) return res.status(404).json({ message: 'Peça não encontrada' });
 
     const { data: peca } = await fetchPeca(req.db, req.params.id);
-    res.json(formatPeca(peca));
+    res.json(await formatPeca(req.db, peca));
   }
 );
 

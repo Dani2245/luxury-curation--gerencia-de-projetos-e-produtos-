@@ -3,6 +3,8 @@ import { apiFetch, formatCurrency, formatDateTime } from '../services/api';
 import OperationLayout, { Field, Feedback } from './OperationLayout';
 import { buttonClass, primaryClass, inputClass, today, displayDate } from '../services/operations';
 
+import { useCategories } from '../services/categories';
+
 const FINANCIAL_CATEGORIES = { comissao_venda: 'Comissão de venda', emissao_passaporte: 'Emissão de passaporte', manutencao_passaporte: 'Manutenção de passaporte', comissao_perito: 'Comissão a perito', comissao_parceiro: 'Comissão a parceiro', custo_operacional: 'Custo operacional' };
 const STATUS = { pendente: 'Aguardando vendedor', aceita: 'Aguardando pagamento', paga: 'Pagamento retido', enviada: 'Enviada', em_conferencia: 'Em conferência', contestada: 'Contestada', confirmada: 'Confirmada', cancelada: 'Cancelada' };
 const initialFilters = () => ({ dataInicial: today().slice(0, 7) + '-01', dataFinal: today(), categoria: '', status: '', tipo: '' });
@@ -13,6 +15,7 @@ const emptyPaymentFilters = { dataInicial: '', dataFinal: '', status: '' };
 const Summary = ({ label, value, testId }) => <div className="border border-gray-800 bg-[#111] p-4"><p className="text-gray-400 font-sans text-xs mb-2">{label}</p><p data-testid={testId} className="text-xl text-white">{formatCurrency(value)}</p></div>;
 
 export default function Reports() {
+  const { categories, error: categoryError } = useCategories();
   const [mode, setMode] = useState('transacoes');
   const [filters, setFilters] = useState(initialFilters);
   const [data, setData] = useState(null);
@@ -80,12 +83,12 @@ export default function Reports() {
     <form onSubmit={(e) => { e.preventDefault(); load(mode, filters); }} className="grid sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-4 items-end">
       <Field id="r-inicio" label="Data inicial" type="date" required value={filters.dataInicial} onChange={(e) => setFilters({ ...filters, dataInicial: e.target.value })} />
       <Field id="r-fim" label="Data final" type="date" required value={filters.dataFinal} onChange={(e) => setFilters({ ...filters, dataFinal: e.target.value })} />
-      <Field id="r-categoria" label="Categoria"><select id="r-categoria" className={inputClass} value={filters.categoria} onChange={(e) => setFilters({ ...filters, categoria: e.target.value })}><option value="">Todas</option>{mode === 'transacoes' ? ['obra de arte', 'joia', 'relógio'].map((c) => <option key={c} value={c}>{c}</option>) : Object.entries(FINANCIAL_CATEGORIES).map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></Field>
+      <Field id="r-categoria" label="Categoria"><select id="r-categoria" className={inputClass} value={filters.categoria} onChange={(e) => setFilters({ ...filters, categoria: e.target.value })}><option value="">Todas</option>{mode === 'transacoes' ? categories.map((c) => c.nome).map((c) => <option key={c} value={c}>{c}</option>) : Object.entries(FINANCIAL_CATEGORIES).map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></Field>
       {mode === 'transacoes' ? <Field id="r-status" label="Situação"><select id="r-status" className={inputClass} value={filters.status} onChange={(e) => setFilters({ ...filters, status: e.target.value })}><option value="">Todas</option>{Object.entries(STATUS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></Field> : <Field id="r-tipo" label="Receita ou despesa"><select id="r-tipo" className={inputClass} value={filters.tipo} onChange={(e) => setFilters({ ...filters, tipo: e.target.value })}><option value="">Ambas</option><option value="receita">Receita</option><option value="despesa">Despesa</option></select></Field>}
       <button disabled={busy} className={primaryClass}>Gerar relatório</button>
     </form>
     <p className="font-sans text-xs text-gray-500 mb-5">{mode === 'transacoes' ? 'Período pela data da proposta, no horário de Brasília. O total inclui as situações selecionadas; não representa receita da plataforma.' : 'Período pela competência do lançamento. Contas a receber/pagar são os valores em aberto desse período. Cancelamentos não entram nos totais.'}</p>
-    <Feedback error={error} notice={notice} />
+    <Feedback error={error || categoryError} notice={notice} />
     {loading ? <p role="status">Carregando relatório...</p> : data && mode === 'transacoes' ? <>
       <div className="grid sm:grid-cols-2 gap-4 mb-6"><Summary label="Total das transações selecionadas" value={data.total} testId="r-total" /><Summary label="Vendas concluídas entre as selecionadas" value={data.vendasConcluidas} testId="r-concluidas" /></div>
       <p className="text-gray-400 font-sans text-sm mb-4">{data.quantidade} transação(ões)</p>

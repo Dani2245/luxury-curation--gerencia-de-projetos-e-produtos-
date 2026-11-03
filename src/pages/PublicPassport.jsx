@@ -18,8 +18,9 @@ const STATUS_STYLE = {
 };
 
 // RFS54 - consulta do passaporte pelo link ou QR code, sem cadastro, só com os campos públicos
-const PublicPassport = () => {
-  const { token } = useParams();
+const PublicPassport = ({ exampleToken, example }) => {
+  const route = useParams();
+  const token = exampleToken || route.token;
   const [searchParams] = useSearchParams();
   const origem = searchParams.get('origem') === 'qr' ? 'qr' : 'link';
   const [passaporte, setPassaporte] = useState(null);
@@ -64,6 +65,7 @@ const PublicPassport = () => {
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12 pt-24 min-h-screen">
+      {example && <aside className="border border-[#A69076] p-5 mb-6 space-y-2"><h1 className="text-2xl font-serif">Passaporte-exemplo · Teste de leitura</h1><p>Nível de verificação declarado: {example.nivelVerificacao}</p><p>Estado de conservação declarado: {example.estadoConservacao}</p><p className="text-sm text-gray-400">Leia sem ajuda e depois explique a procedência, o estado de conservação e quem assinou.</p></aside>}
       <p className="text-[#A69076] font-sans text-xs tracking-widest uppercase mb-6">Consulta pública · compartilhada pelo proprietário</p>
 
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-10 border-b border-gray-800 pb-8">

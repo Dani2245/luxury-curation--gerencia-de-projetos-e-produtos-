@@ -2,23 +2,23 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Upload, X } from 'lucide-react';
 import { apiFetch } from '../services/api';
+import { useCategories } from '../services/categories';
 
-const CATEGORIAS = [
-  { value: 'obra de arte', label: 'Obra de Arte' },
-  { value: 'joia', label: 'Joia' },
-  { value: 'relógio', label: 'Relógio' }
-];
+
 
 const inputClass = 'w-full bg-[#0a0a0a] border border-gray-700 px-4 py-3 text-white focus:outline-none focus:border-[#A69076] transition-colors font-sans';
 const labelClass = 'block text-gray-400 font-sans text-xs tracking-widest uppercase mb-2';
 
 // Formulário de peça (Tabela 1). Sem `item` cadastra; com `item` edita.
 const ItemForm = ({ item, onSaved }) => {
+  const { categories, error: categoryError } = useCategories();
+  const [atributos, setAtributos] = useState(item?.atributos || {});
+  const [privada, setPrivada] = useState(item?.privada ?? true);
   const [nome, setNome] = useState(item?.nome || '');
   const [categoria, setCategoria] = useState(item?.categoria || '');
   const [valor, setValor] = useState(item ? String(item.valor) : '');
   const [descricao, setDescricao] = useState(item?.descricao || '');
-  const [mantidas, setMantidas] = useState(item?.fotografias || []);
+  const [mantidas, setMantidas] = useState(item?.fotografiasRefs || item?.fotografias || []);
   const [novas, setNovas] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -37,6 +37,8 @@ const ItemForm = ({ item, onSaved }) => {
     const formData = new FormData();
     formData.append('nome', nome);
     formData.append('categoria', categoria);
+    formData.append('atributos', JSON.stringify(atributos));
+    formData.append('privada', String(privada));
     formData.append('valorPretendido', valor);
     formData.append('descricao', descricao);
     if (item) formData.append('fotografiasMantidas', JSON.stringify(mantidas));
@@ -57,9 +59,9 @@ const ItemForm = ({ item, onSaved }) => {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-8">
-      {error && (
+      {(error || categoryError) && (
         <div role="alert" className="bg-red-900/50 border border-red-500 text-red-200 px-4 py-3 font-sans text-sm">
-          {error}
+          {error || categoryError}
         </div>
       )}
 
@@ -87,12 +89,12 @@ const ItemForm = ({ item, onSaved }) => {
               id="categoria"
               required
               value={categoria}
-              onChange={(e) => setCategoria(e.target.value)}
+              onChange={(e) => { setCategoria(e.target.value); setAtributos({}); }}
               className={`${inputClass} appearance-none`}
             >
               <option value="" disabled>Selecione uma categoria</option>
-              {CATEGORIAS.map((c) => (
-                <option key={c.value} value={c.value}>{c.label}</option>
+              {categories.map((c) => (
+                <option key={c.id} value={c.nome}>{c.nome}</option>
               ))}
             </select>
           </div>
@@ -114,6 +116,9 @@ const ItemForm = ({ item, onSaved }) => {
         </div>
 
         <div>
+          {(categories.find((c) => c.nome === categoria)?.atributos || []).map((attr, index) => <div key={attr} className="mb-4"><label htmlFor={`atributo-${index}`} className={labelClass}>{attr}</label><input id={`atributo-${index}`} className={inputClass} maxLength={500} value={atributos[attr] || ''} onChange={(e) => setAtributos({ ...atributos, [attr]: e.target.value })} /></div>)}
+          <label className="flex gap-3 items-center text-sm mb-4"><input id="peca-privada" type="checkbox" checked={privada} onChange={(e) => setPrivada(e.target.checked)} />Manter como acervo privado</label>
+          <p className="text-gray-400 text-sm mb-6">No acervo privado, a peça fica acessível ao proprietário, à administração e aos peritos. Desmarque para solicitar publicação no catálogo. O compartilhamento do passaporte continua sob seu controle, campo a campo.</p>
           <label htmlFor="descricao" className={labelClass}>Descrição e Histórico</label>
           <textarea
             id="descricao"
@@ -134,7 +139,7 @@ const ItemForm = ({ item, onSaved }) => {
           <ul className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
             {mantidas.map((url) => (
               <li key={url} className="relative aspect-square bg-[#0a0a0a] border border-gray-800">
-                <img src={url} alt="Fotografia da peça" className="object-cover w-full h-full" />
+                <img src={item?.fotografias[item.fotografiasRefs?.indexOf(url)] || url} alt="Fotografia da peça" className="object-cover w-full h-full" />
                 <button
                   type="button"
                   aria-label="Remover fotografia"

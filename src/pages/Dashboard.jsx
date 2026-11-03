@@ -71,6 +71,8 @@ const Dashboard = () => {
               <Bell className="w-4 h-4" /> Alertas
             </Link>
           )}
+          {['Administrador', 'Vendedor'].includes(user.perfil) && <Link to="/dashboard/categorias" className={linkClass}>Categorias de peças</Link>}
+          <Link to="/dashboard/laudos" className={linkClass}>Laudos periciais</Link>
           <Link to="/dashboard/indicacoes" className={linkClass}>Indicações</Link>
           {user.perfil === 'Comprador' && <Link to="/dashboard/colecao" className={linkClass}>Minha coleção</Link>}
           {user.perfil !== 'Perito' && <Link to="/dashboard/avaliacoes" className={linkClass}>Avaliações</Link>}

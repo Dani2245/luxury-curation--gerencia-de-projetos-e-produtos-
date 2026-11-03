@@ -6,6 +6,7 @@ const validate = require('../middlewares/validate');
 const { authenticate, authorize } = require('../middlewares/auth');
 const { uploadDocumentos, CAMPOS } = require('../middlewares/upload-documentos');
 const { handleDbError } = require('../utils/db-error');
+const { resolveFotos } = require('../utils/peca-fotos');
 const {
   emitirPassaporteSchema,
   atualizarPassaporteSchema,
@@ -90,7 +91,7 @@ router.get('/pendentes', authenticate, authorize('Perito', 'Administrador'), asy
     .order('nome', { ascending: true });
   if (error) return handleDbError(res, error, 'Erro ao consultar peças sem passaporte');
 
-  res.json(data.map(formatPeca));
+  res.json(await Promise.all(data.map(async (item) => ({ ...formatPeca(item), fotografias: (await resolveFotos(req.db, item.fotografias || [])).filter(Boolean) }))));
 });
 
 // GET /api/passaportes/peca/:pecaId - Consultar passaporte digital da peça (RFS06)

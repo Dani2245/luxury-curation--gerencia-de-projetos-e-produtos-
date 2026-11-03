@@ -70,10 +70,12 @@ describe('RFC02 - Manter Peças', function () {
       await waitForPath(driver, '/dashboard/nova-peca');
     });
 
-    it('oferece somente as categorias obra de arte, joia e relógio', async () => {
+    it('oferece as categorias cadastradas, incluindo as três categorias iniciais', async () => {
+      // As categorias agora são carregadas da API (RFC10), depois do formulário.
+      await driver.wait(until.elementLocated(By.css('#categoria option[value="joia"]')), 10000);
       const options = await driver.findElements(By.css('#categoria option:not([disabled])'));
       const values = await Promise.all(options.map((option) => option.getAttribute('value')));
-      assert.deepEqual(values, ['obra de arte', 'joia', 'relógio']);
+      for (const value of ['obra de arte', 'joia', 'relógio']) assert.ok(values.includes(value));
     });
 
     it('limita o nome da peça a 256 caracteres', async () => {
@@ -83,6 +85,7 @@ describe('RFC02 - Manter Peças', function () {
     it('cadastra a peça com fotografia e a envia para validação', async () => {
       await open(driver, '/dashboard/nova-peca');
       await fill(driver, 'nome', nome);
+      await driver.findElement(By.id('peca-privada')).click();
       await select(driver, 'categoria', 'joia');
       await fill(driver, 'valor', String(valor));
       await fill(driver, 'descricao', 'Colar de pérolas cultivadas, fecho em ouro branco.');
@@ -185,6 +188,7 @@ describe('RFC02 - Manter Peças', function () {
       await clickLabeled(driver, `Editar ${nome}`);
       await driver.wait(until.elementLocated(By.id('nome')), 10000);
       await driver.wait(async () => (await driver.findElement(By.id('nome')).getAttribute('value')) === nome, 10000);
+      await driver.wait(until.elementLocated(By.css('#categoria option[value="joia"]')), 10000);
       assert.equal(await driver.findElement(By.id('categoria')).getAttribute('value'), 'joia');
       assert.equal(await driver.findElements(By.css('ul img')).then((imgs) => imgs.length), 1);
 

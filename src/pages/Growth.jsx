@@ -4,12 +4,14 @@ import GrowthPanel from '../components/GrowthPanel';
 import IndicatorsManager from '../components/IndicatorsManager';
 import ExperimentsManager from '../components/ExperimentsManager';
 import HabitReport from '../components/HabitReport';
+import GrowthPilots from '../components/GrowthPilots';
 import { buttonClass, primaryClass } from '../services/operations';
 
 const ABAS = [
   ['painel', 'Painel de growth', GrowthPanel],
   ['indicadores', 'Indicadores', IndicatorsManager],
   ['experimentos', 'Experimentos', ExperimentsManager],
+  ['pilotos', 'Pilotos X1–X5', GrowthPilots],
   ['habito', 'Indicadores do hábito', HabitReport]
 ];
 

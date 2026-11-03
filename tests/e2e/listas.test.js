@@ -104,7 +104,8 @@ describe('RFC22 - Lista de Desejos', function () {
       await open(driver, '/dashboard');
       await waitForText(driver, 'Nova lista');
       await fill(driver, 'lista-nome', `${prefix} Joias`);
-      await driver.findElement(By.id('lista-cat-joia')).click();
+      // RFC10: aguarda as categorias consultadas no banco antes de selecionar.
+      await driver.wait(until.elementLocated(By.id('lista-cat-joia')), 10000).click();
       await fill(driver, 'lista-min', String(base));
       await fill(driver, 'lista-max', String(base + 100));
       await clickButton(driver, 'Criar lista');

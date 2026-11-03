@@ -1,5 +1,5 @@
 const { z } = require('zod');
-const { CATEGORIAS } = require('./peca.schema');
+
 
 const emptyToUndefined = (val) => (typeof val === 'string' && val.trim() === '' ? undefined : val);
 
@@ -20,7 +20,7 @@ const criterios = {
     .min(1, 'O nome da lista é obrigatório')
     .max(100, 'O nome da lista deve ter no máximo 100 caracteres'),
   categorias: z
-    .array(z.enum(CATEGORIAS, { error: 'Categoria inválida. Escolha: obra de arte, joia ou relógio' }))
+    .array(z.string().trim().min(1).max(80))
     .default([]),
   valorMin: valorField('O valor mínimo deve ser um número válido'),
   valorMax: valorField('O valor máximo deve ser um número válido')

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { CATEGORIAS, slug } from '../services/wishlist';
+import { useCategories } from '../services/categories';
+import { slug } from '../services/wishlist';
 
 const inputClass = 'w-full bg-[#0a0a0a] border border-gray-700 px-4 py-3 text-white focus:outline-none focus:border-[#A69076] transition-colors font-sans';
 const labelClass = 'block text-gray-400 font-sans text-xs tracking-widest uppercase mb-2';
@@ -9,6 +10,7 @@ const toValue = (campo) => (campo === '' ? null : Number(campo));
 
 // Nome, categorias e faixa de valor da lista de desejos (RFS77 e RFS79)
 const WishlistForm = ({ initial = {}, submitLabel, onSubmit, onCancel, saving }) => {
+  const { categories, error } = useCategories();
   const [nome, setNome] = useState(initial.nome || '');
   const [categorias, setCategorias] = useState(initial.categorias || []);
   const [valorMin, setValorMin] = useState(toField(initial.valorMin));
@@ -29,10 +31,11 @@ const WishlistForm = ({ initial = {}, submitLabel, onSubmit, onCancel, saving })
         <input id="lista-nome" type="text" required maxLength={100} value={nome} onChange={(e) => setNome(e.target.value)} className={inputClass} placeholder="Ex.: Relógios vintage" />
       </div>
 
+      {error && <p role="alert">{error}</p>}
       <fieldset>
         <legend className={labelClass}>Categorias (nenhuma marcada = todas)</legend>
         <div className="flex flex-wrap gap-6">
-          {CATEGORIAS.map((categoria) => (
+          {categories.map((c) => c.nome).map((categoria) => (
             <label key={categoria} htmlFor={`lista-cat-${slug(categoria)}`} className="flex items-center gap-2 font-sans text-sm text-gray-300 cursor-pointer first-letter:uppercase">
               <input
                 id={`lista-cat-${slug(categoria)}`}

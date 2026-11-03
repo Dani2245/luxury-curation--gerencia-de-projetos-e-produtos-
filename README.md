@@ -34,7 +34,9 @@ A luxurious, high-end web application for curating rare art, iconic objects, and
    - `schema-rfc12-rfc13-prazos.sql` (prazos da conferência e da disputa, consulta e exclusão de pagamentos retidos);
    - `schema-growth.sql` (lista de espera, indicações, indicadores, experimentos e painel de growth);
    - `schema-habito.sql` (coleção privada, exportação, avaliações e relatório do hábito);
-   - `schema-conservacao.sql` (lembrete de conservação da coleção).
+   - `schema-conservacao.sql` (lembrete de conservação da coleção);
+   - `schema-release3.sql` (categorias, laudos, assinatura, A5 e acervo privado);
+   - `schema-release3-growth.sql` (pilotos X1–X5, evidências, exemplo público e A4).
 
    Em um projeto existente que já recebeu as migrações de listas e alertas, aplique apenas os scripts seguintes a elas, na ordem acima. Eles são aditivos e podem ser reaplicados. Não recrie o banco nem reaplique o seed para atualizar o projeto. Vendas históricas confirmadas continuam concluídas; a migração não inventa pagamentos ou lançamentos financeiros retroativos.
 3. Inicie a API e o frontend:
@@ -54,6 +56,8 @@ Usuários de teste criados pelo seed (senha de desenvolvimento em `backend/datab
 
 ## Testes end-to-end (Selenium)
 
+O [guia da release 3](docs/RELEASE3.md) traz a matriz de requisitos, o roteiro de demonstração e as regras de laudos/categorias. Consulte também o [dicionário de eventos e indicadores](docs/DICIONARIO_EVENTOS.md). Para rodar os testes novos: `npm run test:e2e:release3`.
+
 Com a API e o frontend em execução e o Chrome instalado:
 
 ```bash
@@ -68,7 +72,7 @@ npx mocha tests/e2e/links.test.js
 
 - Configurável por `E2E_BASE_URL` (padrão `http://localhost:5173`), `E2E_API_URL` (padrão `http://localhost:3000`) e `E2E_HEADLESS=false` para ver o navegador.
 - No Windows, os logs internos do Chrome ficam desabilitados no terminal para evitar mensagens repetidas do atualizador. A saída e as falhas do Mocha/Selenium continuam visíveis. Para investigar o navegador, execute com `E2E_CHROME_LOGS=true`.
-- As suítes cobrem RFC01 a RFC04, RFC06, RFC07, RF01, RF02, RFC11 a RFC13 (inclusive os prazos da conferência e da disputa), RFC16 a RFC24, RF04, RF05, RNF05 e RNF06 e criam os próprios dados (peças com prefixo `E2E `). A função `e2e_ajustar_prazo`, também do `test-support.sql`, antecipa prazos de transações de teste para demonstrar prazos próximos e vencidos.
+- As suítes cobrem RFC01 a RFC07, RFC10, RF01, RF02, RFC11 a RFC13 (inclusive os prazos da conferência e da disputa), RFC16 a RFC24, RF04, RF05, RNF05, RNF06 e o suporte aos pilotos X1–X5. Elas criam os próprios dados (peças com prefixo `E2E `). A função `e2e_ajustar_prazo`, também do `test-support.sql`, antecipa prazos de transações de teste para demonstrar prazos próximos e vencidos; `e2e_datar_laudo` verifica a janela de 60 dias do A5 usando apenas laudos de teste.
 - Para apagar esses dados ao final (peças vendidas não podem ser removidas pela aplicação), execute a versão atual de `backend/database/test-support.sql` no ambiente de testes, inclusive se já instalou uma versão anterior. Ela inclui a limpeza das novas entidades, restrita aos dados de teste. **Não use esse arquivo em produção.** As suítes devem rodar sequencialmente, sem outra execução simultânea no mesmo banco.
 
 ## Regras de negócio implementadas

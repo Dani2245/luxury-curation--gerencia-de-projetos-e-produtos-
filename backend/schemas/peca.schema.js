@@ -31,7 +31,9 @@ const pecaSchema = z.object({
     .trim()
     .min(1, 'O nome da peça é obrigatório')
     .max(256, 'O nome da peça deve ter no máximo 256 caracteres'),
-  categoria: z.enum(CATEGORIAS, { error: 'Categoria inválida. Escolha: obra de arte, joia ou relógio' }),
+  categoria: z.string().trim().min(1, 'Informe a categoria').max(80),
+  atributos: z.preprocess(parseJsonArray, z.record(z.string().max(60), z.string().max(500)).default({})),
+  privada: z.preprocess((v) => v === 'true' ? true : v === 'false' ? false : v, z.boolean().default(true)),
   descricao: z.string().trim().optional().default(''),
   valorPretendido: valorField('O valor pretendido é obrigatório e deve ser um número válido'),
   // Na edição: URLs das fotografias atuais que devem ser mantidas
@@ -43,7 +45,7 @@ const pecaSchema = z.object({
 
 const listPecasQuerySchema = z
   .object({
-    categoria: z.preprocess(emptyToUndefined, z.enum(CATEGORIAS, { error: 'Categoria inválida' }).optional()),
+    categoria: z.preprocess(emptyToUndefined, z.string().trim().min(1).max(80).optional()),
     valorMin: z.preprocess(emptyToUndefined, valorField('O valor mínimo deve ser um número válido').optional()),
     valorMax: z.preprocess(emptyToUndefined, valorField('O valor máximo deve ser um número válido').optional()),
     vendedor: z.preprocess(emptyToUndefined, z.string().trim().optional()),
