@@ -6,7 +6,7 @@ Execução real em ambiente local, com Chrome, Node.js v24.3.0, npm 11.4.2 e Sup
 - Término: 03/11/2026, 21:11:55 (Brasília).
 - Duração: 23 min 53 s.
 - Resultado: **283 testes aprovados; 0 falhas; 0 ignorados; 72 grupos**.
-- Revisão: alterações da Release 4 incluídas no mesmo commit deste relatório, sobre a base 8f41936 (Release 03).
+- Revisão do código validado: `285eb4d` (Release 04), sobre a base `8f41936` (Release 03). A confirmação posterior das decisões de escopo alterou somente a documentação.
 - Frontend e API permaneceram estáveis durante a execução; nenhuma alteração de código ou schema foi feita durante a rodada final.
 
 Comando executado na raiz, com API e frontend ligados:
@@ -62,4 +62,4 @@ npm run test:e2e -- --reporter json-stream
 
 A suíte usa navegador Selenium e a API real com Supabase de desenvolvimento. E-mail usa SMTP de captura local e API/frontend temporários próprios: valida o transporte sem encaminhar mensagens externas. Não comprova entrega por um provedor real nem leitura do destinatário.
 
-As regras iniciais de RFC14/RFC15/RF03 e as limitações operacionais estão no [guia da Release 4](RELEASE4.md). Este resultado comprova os cenários automatizados; não substitui homologação do grupo, atualização do DRE/cronograma, implantação em produção ou experimentos com participantes reais.
+As regras de RFC14/RFC15/RF03, a confirmação da proposta pelo solicitante e as limitações operacionais estão no [guia da Release 4](RELEASE4.md). Este resultado comprova os cenários automatizados; não substitui homologação do grupo, atualização do DRE/cronograma, implantação em produção ou experimentos com participantes reais.

@@ -4,7 +4,13 @@
 
 O cronograma fornecido inclui RFC08/RFC09, manutenção do RF01, RF02/RFC11, RFC14–15, RFC23–24, RF03–05, conclusão do RFC21 e RNFs. X6–X15 aparecem como **backlog posterior**, já cadastrado no módulo de experimentos: não são experimentos de campo executados automaticamente pela entrega de código.
 
-As regras de consignação e parcerias seguem o PDF da proposta técnica (RFS25–32). O mesmo PDF não contém a especificação detalhada de RFC14/RFC15/RF03. As decisões complementares devem ser registradas nesta documentação e alinhadas ao DRE do grupo antes de declarar a homologação.
+As regras de consignação e parcerias seguem o PDF da proposta técnica (RFS25–32). O mesmo PDF não contém a especificação detalhada de RFC14/RFC15/RF03. O solicitante confirmou as seguintes decisões para esta entrega:
+
+- Adotar e documentar a proposta de onboarding por checklist e Health Score por atividade, uso do passaporte e fluxo principal, com pesos e faixas configuráveis.
+- Implementar alertas na plataforma e e-mail opcional com consentimento, fila e SMTP; validar com servidor local, sem mensagens reais nos testes.
+- Manter a coleção privada atual e deixar a revenda de peças adquiridas para uma entrega posterior.
+
+Essas decisões orientam a implementação descrita abaixo. O grupo deve incorporá-las ao DRE; a confirmação do escopo pelo solicitante não substitui a homologação com o professor.
 
 ## Demonstração de consignação (administrador)
 
@@ -41,9 +47,9 @@ As condições são registradas como acordo comercial. Despesas efetivas com par
 
 **RF03 — Administrador → Saúde da base:** consulta por período (até 366 dias), perfil e coorte (mês do cadastro), com total de contas, contas com login, média e distribuição por perfil/faixa. Períodos usam o horário de Brasília e incluem ambos os extremos. Contas sem eventos contam com pontuação zero; uma seleção sem contas exibe média sem base. Administradores não entram na base de clientes. O relatório só devolve agregados, mantendo a restrição do RNF06 sobre eventos individuais.
 
-O administrador ajusta pesos (soma obrigatória de 100), meta de dias e limites das faixas com justificativa. As versões ficam no histórico. Uma consulta recalcula o período com a regra **vigente**, não simula um snapshot histórico da regra antiga. Essas são regras iniciais de implementação, propostas porque o PDF recebido não especifica RFC14/RFC15/RF03; não constituem confirmação de que o DRE revisado adotou a mesma fórmula.
+O administrador ajusta pesos (soma obrigatória de 100), meta de dias e limites das faixas com justificativa. As versões ficam no histórico. Uma consulta recalcula o período com a regra **vigente**, não simula um snapshot histórico da regra antiga. Os parâmetros iniciais acima concretizam a proposta de implementação aprovada pelo solicitante para RFC14/RFC15/RF03. A fórmula e os parâmetros devem constar na atualização do DRE.
 
-A coleção privada existente continua sem revenda de peças adquiridas; revenda não está detalhada no material fornecido.
+A coleção privada existente mantém cadastro/importação, manutenção e pedido de passaporte. Por decisão expressa do solicitante, a revenda de peças adquiridas fica fora do escopo desta release e será tratada posteriormente.
 
 ## Alertas opcionais por e-mail
 
