@@ -144,3 +144,19 @@ Validação em 29/10/2026: **175 testes passando** na suíte completa (162 da en
 Roteiro manual: registrar uma custódia e movimentá-la; criar uma proposta de compra; entrar como vendedor para aceitar; como comprador para pagar; como vendedor para registrar envio; como comprador para receber e aprovar. Por fim, entrar como administrador e conferir a venda agrupada, a comissão financeira e o histórico. Uma segunda transação permite demonstrar contestação e estorno.
 
 A entrega do código não substitui a atualização do cronograma (% executado), o alinhamento do DRE ou a criação da tag da release após a revisão/integração pelo grupo. Os requisitos de growth e hábito que ficaram com outro integrante continuam sendo uma frente separada.
+
+## Gestão do projeto
+
+[Abrir o Kanban da Lastro no GitHub Projects](https://github.com/users/hoddy23/projects/1/views/1).
+
+O quadro reúne entregas concluídas, trabalho em andamento e atividades a fazer, com responsáveis, fontes, critérios de aceite e dependências. A organização de 27/10/2026 acrescentou 54 cartões baseados na proposta técnica v7, na estimativa de esforço PCU, no Plano de Growth e nas evidências do repositório, preservando o cartão anterior.
+
+### Acesso ao Kanban
+
+O quadro pertence à conta `hoddy23` e é público: a equipe e o professor podem visualizá-lo pelo link acima.
+
+Para atualizar cartões, entre no GitHub com uma conta que tenha permissão de escrita no Project. As contas `Dani2245`, `fabiooaugusto`, `gabriel-ataidev` e `gudyfut` já constam como colaboradoras com permissão **Write**, além do proprietário `hoddy23`.
+
+O acesso de edição ao repositório não concede automaticamente acesso de edição ao Project. Para adicionar outro integrante, o proprietário deve usar **Settings → Manage access** no quadro.
+
+O link neste README é o ponto de acesso ao Kanban pelo repositório. O GitHub não disponibilizou este quadro na lista de projetos vinculáveis; portanto, ele ainda não está vinculado na aba **Projects**.
