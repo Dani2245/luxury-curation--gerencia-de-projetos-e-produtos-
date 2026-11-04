@@ -12,6 +12,20 @@ As regras de consignação e parcerias seguem o PDF da proposta técnica (RFS25�
 
 Essas decisões orientam a implementação descrita abaixo. O grupo deve incorporá-las ao DRE; a confirmação do escopo pelo solicitante não substitui a homologação com o professor.
 
+## Divergências com o Kanban a alinhar antes do fechamento
+
+Na conferência do [Kanban público](https://github.com/users/hoddy23/projects/1/views/1) em 03/11/2026, os cartões abaixo apresentaram critérios adicionais à proposta aprovada pelo solicitante. As descrições citam a proposta v7 e status de 27/10/2026; o PDF disponível na implementação não detalhava esses requisitos. É necessário definir qual escopo será cobrado e refletir a decisão no DRE e no quadro.
+
+| Requisito | Implementação atual | Critérios adicionais descritos no cartão |
+|---|---|---|
+| RFC14 | Checklist derivado de cadastro, documentação, passaporte e curadoria | Diagnóstico/verificação/dossiê, acompanhamento de dossiês parados há mais de 10 dias e registro de desistência |
+| RFC15 | Pontuação derivada de eventos, pesos/faixas configuráveis e histórico das regras | Plano de recuperação e referência aos pesos do Plano de CS |
+| RF03 | Base agregada por perfil/coorte, atividade, pontuação e faixas | Ações, conferências aprovadas, disputas por motivo e tempo até publicação no relatório de saúde |
+
+Os critérios adicionais não estão cobertos integralmente pela implementação atual nem pelos 283 testes aprovados. A métrica B3 existente em Growth mede tempo até o passaporte; ela não equivale à consolidação desses critérios no RF03. Se o grupo mantiver a proposta aprovada, precisa registrar a revisão de escopo. Se adotar os critérios adicionais, será necessária implementação e nova validação antes de declarar esses itens concluídos.
+
+O quadro também mantém consignação, parcerias e outras funcionalidades já implementadas como **A fazer**. O status importado não representa a situação atual do código; atualizar os cartões deve incluir evidências e os limites acima, sem marcar automaticamente todos como concluídos.
+
 ## Demonstração de consignação (administrador)
 
 1. No painel, abra **Consignação**. Selecione uma peça não vendida. O vendedor consignante é preenchido a partir da peça e conferido no banco.
