@@ -4,12 +4,28 @@ require('dotenv').config();
 
 const pecasRoutes = require('./routes/pecas.routes');
 const authRoutes = require('./routes/auth.routes');
+const usuariosRoutes = require('./routes/usuarios.routes');
+const passaportesRoutes = require('./routes/passaportes.routes');
+const transacoesRoutes = require('./routes/transacoes.routes');
+const linksRoutes = require('./routes/links.routes');
+const publicoRoutes = require('./routes/publico.routes');
+const eventosRoutes = require('./routes/eventos.routes');
+const listasRoutes = require('./routes/listas.routes');
+const alertasRoutes = require('./routes/alertas.routes');
+const notificacoesRoutes = require('./routes/notificacoes.routes');
+const custodiasRoutes = require('./routes/custodias.routes');
+const financeiroRoutes = require('./routes/financeiro.routes');
+const listaEsperaRoutes = require('./routes/lista-espera.routes');
+const indicacoesRoutes = require('./routes/indicacoes.routes');
+const growthRoutes = require('./routes/growth.routes');
+const colecaoRoutes = require('./routes/colecao.routes');
+const avaliacoesRoutes = require('./routes/avaliacoes.routes');
 
 const app = express();
 
 // Middlewares Globais
-app.use(cors());
-app.use(express.json());
+app.use(cors({ origin: (process.env.FRONTEND_URL || 'http://localhost:5173').split(',') }));
+app.use(express.json({ limit: '1mb' }));
 
 // Rota de Healthcheck / Status
 app.get('/api/health', (req, res) => {
@@ -22,6 +38,29 @@ app.get('/api/health', (req, res) => {
 
 // Rotas da Aplicação
 app.use('/api/pecas', pecasRoutes);
+app.use('/api/categorias', require('./routes/categorias.routes'));
+app.use('/api/laudos', require('./routes/laudos.routes'));
+app.use('/api/usuarios', usuariosRoutes);
+app.use('/api/passaportes', passaportesRoutes);
+app.use('/api/transacoes', transacoesRoutes);
+app.use('/api/links', linksRoutes);
+app.use('/api/publico', publicoRoutes);
+app.use('/api/eventos', eventosRoutes);
+app.use('/api/listas', listasRoutes);
+app.use('/api/alertas', alertasRoutes);
+app.use('/api/notificacoes', notificacoesRoutes);
+app.use('/api/custodias', custodiasRoutes);
+app.use('/api/consignacoes', require('./routes/consignacoes.routes'));
+app.use('/api/parcerias', require('./routes/parcerias.routes'));
+app.use('/api/clientes', require('./routes/clientes.routes'));
+app.use('/api/cs', require('./routes/cs.routes'));
+app.use('/api/relatorios', financeiroRoutes);
+app.use('/api/lista-espera', listaEsperaRoutes);
+app.use('/api/indicacoes', indicacoesRoutes);
+app.use('/api/growth', growthRoutes);
+app.use('/api/pilotos', require('./routes/pilotos.routes'));
+app.use('/api/colecao', colecaoRoutes);
+app.use('/api/avaliacoes', avaliacoesRoutes);
 app.use('/api', authRoutes);
 
 // Middleware para tratamento de 404
@@ -30,9 +69,21 @@ app.use((req, res) => {
 });
 
 // Middleware Global de Tratamento de Erros
-app.use((err, req, res, next) => {
+app.use((err, req, res, _next) => {
+  if (err.name === 'MulterError') {
+    const documentos = req.baseUrl.startsWith('/api/passaportes');
+    const limite = err.code === 'LIMIT_FILE_SIZE';
+    const quantidade = err.code === 'LIMIT_FILE_COUNT' || err.code === 'LIMIT_UNEXPECTED_FILE';
+    const message = documentos
+      ? limite ? 'Cada documento deve ter no máximo 10 MB' : quantidade ? 'Envie no máximo 5 arquivos por tipo de documento' : 'Erro no envio dos documentos'
+      : limite ? 'Cada fotografia deve ter no máximo 5 MB' : quantidade ? 'Envie no máximo 10 fotografias' : 'Erro no envio das fotografias';
+    return res.status(400).json({ message });
+  }
+  if (err.status === 400) {
+    return res.status(400).json({ message: err.message });
+  }
   console.error('Unhandled Server Error:', err);
-  res.status(500).json({ message: 'Erro interno do servidor', error: err.message });
+  res.status(500).json({ message: 'Erro interno do servidor' });
 });
 
 const PORT = process.env.PORT || 3000;

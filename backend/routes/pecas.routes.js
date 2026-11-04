@@ -1,111 +1,315 @@
+const crypto = require('crypto');
 const express = require('express');
 const router = express.Router();
-const supabase = require('../config/supabase');
 const validate = require('../middlewares/validate');
-const { createPecaSchema } = require('../schemas/peca.schema');
+const { authenticate, authorize } = require('../middlewares/auth');
+const { uploadFotografias } = require('../middlewares/upload');
+const { handleDbError } = require('../utils/db-error');
+const { resolveFotos, PREFIX: PRIVATE_PREFIX, BUCKET: PRIVATE_BUCKET } = require('../utils/peca-fotos');
+const {
+  pecaSchema,
+  listPecasQuerySchema,
+  pecaIdParamSchema,
+  publicacaoSchema
+} = require('../schemas/peca.schema');
 
-// Helper para normalizar colunas snake_case do Postgres para camelCase esperado pelo React
-const formatPeca = (item) => ({
-  ...item,
-  passportId: item.passportId || item.passport_id || 'Pendente',
-  expertName: item.expertName || item.expert_name || 'Pendente',
-  expertDate: item.expertDate || item.expert_date || 'Pendente'
+const BUCKET = 'pecas';
+const EXTENSOES = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' };
+
+// Normaliza colunas snake_case do Postgres para o camelCase esperado pelo React
+const formatPeca = async (db, item) => ({
+  id: item.id,
+  nome: item.nome,
+  categoria: item.categoria,
+  atributos: item.atributos || {},
+  privada: item.privada,
+  descricao: item.descricao,
+  valor: Number(item.valor_pretendido),
+  fotografias: (await resolveFotos(db, item.fotografias || [])).filter(Boolean),
+  fotografiasRefs: item.fotografias || [],
+  vendedor: { id: item.vendedor_id, nome: item.vendedor_nome },
+  proprietarioId: item.proprietario_id,
+  publicacao: item.publicacao,
+  statusPassaporte: item.status_passaporte,
+  passaporteId: item.passaporte_id,
+  emNegociacao: item.em_negociacao,
+  vendida: item.vendida,
+  criadoEm: item.criado_em,
+  atualizadoEm: item.atualizado_em
 });
 
-// GET /api/pecas - Listar todas as peças
-router.get('/', async (req, res) => {
-  try {
-    if (!supabase) {
-      return res.status(500).json({ message: 'Supabase não está configurado no .env' });
-    }
+const fetchPeca = (db, id) => db.from('vw_pecas').select('*').eq('id', id).maybeSingle();
 
-    const { data, error } = await supabase
-      .from('pecas')
-      .select('*')
-      .order('id', { ascending: false });
+// Caminho do arquivo no bucket a partir da URL pública (ignora URLs externas ou de seed)
+const storagePathFromUrl = (url) => {
+  const marker = `/storage/v1/object/public/${BUCKET}/`;
+  const index = url.indexOf(marker);
+  return index === -1 ? null : decodeURIComponent(url.slice(index + marker.length));
+};
 
+const removeFotografias = async (db, urls) => {
+  const privatePaths = urls.filter((url) => url.startsWith(PRIVATE_PREFIX)).map((url) => url.slice(PRIVATE_PREFIX.length));
+  if (privatePaths.length) await db.storage.from(PRIVATE_BUCKET).remove(privatePaths);
+  const paths = urls.map(storagePathFromUrl).filter(Boolean);
+  if (paths.length === 0) return;
+  const { error } = await db.storage.from(BUCKET).remove(paths);
+  if (error) console.warn('[Supabase Storage] Falha ao remover fotografias:', error.message);
+};
+
+const uploadArquivos = async (req) => {
+  const urls = [];
+  const paths = [];
+  const bucket = req.body.privada ? PRIVATE_BUCKET : BUCKET;
+
+  for (const file of req.files || []) {
+    const path = `${req.user.id}/${crypto.randomUUID()}.${EXTENSOES[file.mimetype]}`;
+    const { error } = await req.db.storage.from(bucket).upload(path, file.buffer, { contentType: file.mimetype });
     if (error) {
-      console.error('[Supabase GET /pecas Error]:', error.message);
-      return res.status(500).json({ message: 'Erro ao consultar peças', error: error.message });
+      await req.db.storage.from(bucket).remove(paths);
+      throw Object.assign(new Error('Erro ao enviar as fotografias'), { cause: error });
     }
-
-    res.json(data.map(formatPeca));
-  } catch (err) {
-    console.error('Erro inesperado ao listar peças:', err);
-    res.status(500).json({ message: 'Erro interno ao consultar peças' });
+    paths.push(path);
+    urls.push(bucket === PRIVATE_BUCKET ? `${PRIVATE_PREFIX}${path}` : req.db.storage.from(BUCKET).getPublicUrl(path).data.publicUrl);
   }
+
+  return urls;
+};
+
+const uploadOrFail = async (req, res) => {
+  try {
+    return await uploadArquivos(req);
+  } catch (err) {
+    console.error('[Supabase Storage]', err.cause?.message || err.message);
+    res.status(500).json({ message: 'Erro ao enviar as fotografias' });
+    return null;
+  }
+};
+
+// GET /api/pecas/minhas - Peças do vendedor autenticado (gestão das próprias peças)
+router.get('/minhas', authenticate, authorize('Vendedor'), async (req, res) => {
+  const { data, error } = await req.db
+    .from('vw_pecas')
+    .select('*')
+    .eq('vendedor_id', req.user.id)
+    .order('nome', { ascending: true });
+  if (error) return handleDbError(res, error, 'Erro ao consultar peças');
+
+  res.json(await Promise.all(data.map((p) => formatPeca(req.db, p))));
 });
 
-// GET /api/pecas/:id - Buscar peça específica
-router.get('/:id', async (req, res) => {
-  const { id } = req.params;
+// GET /api/pecas/pendentes - Fila de anúncios aguardando validação do administrador (RFC02)
+router.get('/pendentes', authenticate, authorize('Administrador'), async (req, res) => {
+  const { data, error } = await req.db
+    .from('vw_pecas')
+    .select('*')
+    .eq('publicacao', 'pendente')
+    .eq('privada', false)
+    .order('nome', { ascending: true });
+  if (error) return handleDbError(res, error, 'Erro ao consultar anúncios pendentes');
 
-  try {
-    if (!supabase) {
-      return res.status(500).json({ message: 'Supabase não está configurado no .env' });
-    }
-
-    const { data, error } = await supabase
-      .from('pecas')
-      .select('*')
-      .eq('id', id)
-      .maybeSingle();
-
-    if (error) {
-      console.error('[Supabase GET /pecas/:id Error]:', error.message);
-      return res.status(500).json({ message: 'Erro ao buscar peça', error: error.message });
-    }
-
-    if (!data) {
-      return res.status(404).json({ message: 'Peça não encontrada' });
-    }
-
-    res.json(formatPeca(data));
-  } catch (err) {
-    console.error('Erro inesperado ao buscar peça:', err);
-    res.status(500).json({ message: 'Erro interno ao buscar peça' });
-  }
+  res.json(await Promise.all(data.map((p) => formatPeca(req.db, p))));
 });
 
-// POST /api/pecas - Cadastrar nova peça com validação Zod
-router.post('/', validate(createPecaSchema), async (req, res) => {
-  const { name, category, price, description, image } = req.body;
+// GET /api/pecas - Consultar peças por categoria, faixa de valor e vendedor (RFS02)
+router.get(
+  '/',
+  authenticate,
+  authorize('Comprador', 'Administrador'),
+  validate(listPecasQuerySchema, 'query'),
+  async (req, res) => {
+    const { categoria, valorMin, valorMax, vendedor, publicacao } = req.query;
 
-  if (!supabase) {
-    return res.status(500).json({ message: 'Supabase não está configurado no .env' });
+    let query = req.db.from('vw_pecas').select('*').order('nome', { ascending: true });
+    if (categoria) query = query.eq('categoria', categoria);
+    if (valorMin !== undefined) query = query.gte('valor_pretendido', valorMin);
+    if (valorMax !== undefined) query = query.lte('valor_pretendido', valorMax);
+    if (vendedor) query = query.ilike('vendedor_nome', `%${vendedor}%`);
+    // Compradores só enxergam peças publicadas (garantido também pela view no banco)
+    if (req.user.perfil === 'Comprador') query = query.eq('publicacao', 'publicada');
+    else if (publicacao) query = query.eq('publicacao', publicacao);
+
+    const { data, error } = await query;
+    if (error) return handleDbError(res, error, 'Erro ao consultar peças');
+
+    res.json(await Promise.all(data.map((p) => formatPeca(req.db, p))));
   }
+);
 
-  const generatedPassportId = `LST-2026-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+// GET /api/pecas/:id - Buscar peça específica (Perito consulta as peças para emitir o passaporte)
+router.get(
+  '/:id',
+  authenticate,
+  authorize('Comprador', 'Administrador', 'Vendedor', 'Perito'),
+  validate(pecaIdParamSchema, 'params'),
+  async (req, res) => {
+    const { data, error } = await fetchPeca(req.db, req.params.id);
+    if (error) return handleDbError(res, error, 'Erro ao buscar peça');
+    if (!data) return res.status(404).json({ message: 'Peça não encontrada' });
 
-  const novaPecaPayload = {
-    name,
-    category,
-    price,
-    description: description || '',
-    image: image || 'https://images.unsplash.com/photo-1541961017774-22349e4a1262?q=80&w=1000&auto=format&fit=crop',
-    status: 'em revisão',
-    passport_id: generatedPassportId,
-    expert_name: 'Pendente',
-    expert_date: 'Pendente'
-  };
+    res.json(await formatPeca(req.db, data));
+  }
+);
 
-  try {
-    const { data, error } = await supabase
+// POST /api/pecas - Inserir peça (RFS01). multipart/form-data com fotografias opcionais
+router.post(
+  '/',
+  authenticate,
+  authorize('Vendedor'),
+  uploadFotografias,
+  validate(pecaSchema),
+  async (req, res) => {
+    const { nome, categoria, descricao, valorPretendido, atributos, privada } = req.body;
+
+    const fotografias = await uploadOrFail(req, res);
+    if (!fotografias) return;
+
+    const { data, error } = await req.db
       .from('pecas')
-      .insert([novaPecaPayload])
-      .select()
+      .insert({
+        nome,
+        categoria,
+        atributos,
+        privada,
+        descricao,
+        valor_pretendido: valorPretendido,
+        fotografias,
+        vendedor_id: req.user.id
+      })
+      .select('id')
       .single();
 
     if (error) {
-      console.error('[Supabase POST /pecas Error]:', error.message);
-      return res.status(400).json({ message: 'Erro ao cadastrar peça no banco', error: error.message });
+      await removeFotografias(req.db, fotografias);
+      return handleDbError(res, error, 'Erro ao cadastrar peça');
     }
 
-    res.status(201).json(formatPeca(data));
-  } catch (err) {
-    console.error('Erro inesperado ao criar peça:', err);
-    res.status(500).json({ message: 'Erro interno ao salvar peça' });
+    const { data: peca } = await fetchPeca(req.db, data.id);
+    res.status(201).json(await formatPeca(req.db, peca));
   }
-});
+);
+
+// PUT /api/pecas/:id - Editar peça enquanto não estiver em negociação (RFS03)
+router.put(
+  '/:id',
+  authenticate,
+  authorize('Vendedor'),
+  validate(pecaIdParamSchema, 'params'),
+  uploadFotografias,
+  validate(pecaSchema),
+  async (req, res) => {
+    const { data: atual, error: fetchError } = await fetchPeca(req.db, req.params.id);
+    if (fetchError) return handleDbError(res, fetchError, 'Erro ao buscar peça');
+    if (!atual || atual.vendedor_id !== req.user.id) {
+      return res.status(404).json({ message: 'Peça não encontrada' });
+    }
+    if (atual.vendida) {
+      return res.status(409).json({ message: 'A peça já foi vendida e não pode ser editada' });
+    }
+    if (atual.em_negociacao) {
+      return res.status(409).json({ message: 'A peça está em negociação e não pode ser editada' });
+    }
+
+    const { nome, categoria, descricao, valorPretendido, fotografiasMantidas, atributos, privada } = req.body;
+
+    const novas = await uploadOrFail(req, res);
+    if (!novas) return;
+
+    const atuais = atual.fotografias || [];
+    const mantidas = fotografiasMantidas ? atuais.filter((url) => fotografiasMantidas.includes(url)) : atuais;
+    const removidas = atuais.filter((url) => !mantidas.includes(url));
+    const privateCopies = [];
+    const finalKept = [];
+    try {
+      for (const ref of mantidas) {
+        if (!privada || ref.startsWith(PRIVATE_PREFIX)) { finalKept.push(ref); continue; }
+        const path = storagePathFromUrl(ref);
+        if (!path) throw { code: 'P0001', message: 'Remova as fotografias de exemplo antes de tornar esta peça privada' };
+        const original = await req.db.storage.from(BUCKET).download(path);
+        if (original.error) throw original.error;
+        const destination = `${req.user.id}/${crypto.randomUUID()}.${EXTENSOES[original.data.type] || 'jpg'}`;
+        const copy = await req.db.storage.from(PRIVATE_BUCKET).upload(destination, original.data, { contentType: original.data.type });
+        if (copy.error) throw copy.error;
+        const privateRef = `${PRIVATE_PREFIX}${destination}`;
+        finalKept.push(privateRef); privateCopies.push(privateRef); removidas.push(ref);
+      }
+    } catch (error) {
+      await removeFotografias(req.db, [...novas, ...privateCopies]);
+      return handleDbError(res, error, 'Erro ao proteger fotografias da peça');
+    }
+
+    const { error } = await req.db
+      .from('pecas')
+      .update({
+        nome,
+        categoria,
+        atributos,
+        privada,
+        descricao,
+        valor_pretendido: valorPretendido,
+        fotografias: [...finalKept, ...novas]
+      })
+      .eq('id', req.params.id);
+
+    if (error) {
+      await removeFotografias(req.db, [...novas, ...privateCopies]);
+      return handleDbError(res, error, 'Erro ao atualizar peça');
+    }
+
+    await removeFotografias(req.db, removidas);
+    const { data: peca } = await fetchPeca(req.db, req.params.id);
+    res.json(await formatPeca(req.db, peca));
+  }
+);
+
+// PATCH /api/pecas/:id/publicacao - Administrador valida o anúncio antes da publicação (RFC02)
+router.patch(
+  '/:id/publicacao',
+  authenticate,
+  authorize('Administrador'),
+  validate(pecaIdParamSchema, 'params'),
+  validate(publicacaoSchema),
+  async (req, res) => {
+    const { data, error } = await req.db
+      .from('pecas')
+      .update({ publicacao: req.body.publicacao })
+      .eq('id', req.params.id)
+      .select('id');
+    if (error) return handleDbError(res, error, 'Erro ao atualizar a situação do anúncio');
+    if (!data || data.length === 0) return res.status(404).json({ message: 'Peça não encontrada' });
+
+    const { data: peca } = await fetchPeca(req.db, req.params.id);
+    res.json(await formatPeca(req.db, peca));
+  }
+);
+
+// DELETE /api/pecas/:id - Remover peça sem transação em andamento (RFS04)
+router.delete(
+  '/:id',
+  authenticate,
+  authorize('Vendedor'),
+  validate(pecaIdParamSchema, 'params'),
+  async (req, res) => {
+    const { data: atual, error: fetchError } = await fetchPeca(req.db, req.params.id);
+    if (fetchError) return handleDbError(res, fetchError, 'Erro ao buscar peça');
+    if (!atual || atual.vendedor_id !== req.user.id) {
+      return res.status(404).json({ message: 'Peça não encontrada' });
+    }
+    if (atual.vendida) {
+      return res.status(409).json({ message: 'A peça já foi vendida e não pode ser removida' });
+    }
+    if (atual.em_negociacao) {
+      return res.status(409).json({ message: 'A peça possui transação em andamento e não pode ser removida' });
+    }
+
+    const { data, error } = await req.db.from('pecas').delete().eq('id', req.params.id).select('id');
+    if (error) return handleDbError(res, error, 'Erro ao remover peça');
+    if (!data || data.length === 0) {
+      return res.status(409).json({ message: 'A peça não pôde ser removida' });
+    }
+
+    await removeFotografias(req.db, atual.fotografias || []);
+    res.status(204).send();
+  }
+);
 
 module.exports = router;

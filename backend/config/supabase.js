@@ -14,9 +14,19 @@ if (supabaseUrl) {
   supabaseUrl = supabaseUrl.trim().replace(/\/rest\/v1\/?$/i, '').replace(/\/+$/, '');
 }
 
-// Cria o cliente se as variáveis estiverem presentes
+const clientOptions = {
+  auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false }
+};
+
+// Cliente anônimo: usado apenas para autenticar (login e validação de token)
 const supabase = (supabaseUrl && supabaseKey)
-  ? createClient(supabaseUrl, supabaseKey)
+  ? createClient(supabaseUrl, supabaseKey, clientOptions)
   : null;
 
-module.exports = supabase;
+// Cliente com o JWT do usuário: as políticas RLS do banco passam a valer para a requisição
+const createUserClient = (token) => createClient(supabaseUrl, supabaseKey, {
+  ...clientOptions,
+  global: { headers: { Authorization: `Bearer ${token}` } }
+});
+
+module.exports = { supabase, createUserClient };

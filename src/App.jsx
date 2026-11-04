@@ -8,6 +8,33 @@ import Auth from './pages/Auth';
 import Landing from './pages/Landing';
 import Dashboard from './pages/Dashboard';
 import CreateItem from './pages/CreateItem';
+import EditItem from './pages/EditItem';
+import Users from './pages/Users';
+import Passport from './pages/Passport';
+import IssuePassport from './pages/IssuePassport';
+import Transactions from './pages/Transactions';
+import PublicPassport from './pages/PublicPassport';
+import Wishlist from './pages/Wishlist';
+import Alerts from './pages/Alerts';
+import ProtectedRoute from './components/ProtectedRoute';
+import Custody from './components/Custody';
+import Reports from './components/Reports';
+import Waitlist from './pages/Waitlist';
+import WaitlistAdmin from './pages/WaitlistAdmin';
+import Referrals from './pages/Referrals';
+import Growth from './pages/Growth';
+import Collection from './pages/Collection';
+import Reviews from './pages/Reviews';
+import Categories from './components/Categories';
+import Appraisals from './components/Appraisals';
+import PassportExample from './components/PassportExample';
+import FoundingExperts from './components/FoundingExperts';
+import Consignments from './components/Consignments';
+import Partnerships from './components/Partnerships';
+import SellerOnboarding from './components/SellerOnboarding';
+import CustomerHealth from './components/CustomerHealth';
+import OnboardingDossiers from './components/OnboardingDossiers';
+import RecoveryPlans from './components/RecoveryPlans';
 
 const App = () => {
   return (
@@ -17,11 +44,37 @@ const App = () => {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/landing" element={<Landing />} />
-          <Route path="/catalogo" element={<Catalog />} />
-          <Route path="/peca/:id" element={<ItemDetails />} />
+          <Route path="/passaporte-exemplo" element={<PassportExample />} />
+          <Route path="/peritos-fundadores" element={<FoundingExperts />} />
           <Route path="/login" element={<Auth />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/dashboard/nova-peca" element={<CreateItem />} />
+          <Route path="/p/:token" element={<PublicPassport />} />
+          <Route path="/catalogo" element={<ProtectedRoute roles={['Comprador', 'Administrador']}><Catalog /></ProtectedRoute>} />
+          <Route path="/peca/:id" element={<ProtectedRoute roles={['Comprador', 'Administrador', 'Vendedor', 'Perito']}><ItemDetails /></ProtectedRoute>} />
+          <Route path="/peca/:id/passaporte" element={<ProtectedRoute roles={['Comprador', 'Administrador', 'Vendedor', 'Perito']}><Passport /></ProtectedRoute>} />
+          <Route path="/dashboard/categorias" element={<ProtectedRoute roles={['Administrador', 'Vendedor']}><Categories /></ProtectedRoute>} />
+          <Route path="/dashboard/laudos" element={<ProtectedRoute><Appraisals /></ProtectedRoute>} />
+          <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+          <Route path="/dashboard/nova-peca" element={<ProtectedRoute roles={['Vendedor']}><CreateItem /></ProtectedRoute>} />
+          <Route path="/dashboard/peca/:id/editar" element={<ProtectedRoute roles={['Vendedor']}><EditItem /></ProtectedRoute>} />
+          <Route path="/dashboard/passaportes/:pecaId/emitir" element={<ProtectedRoute roles={['Perito']}><IssuePassport /></ProtectedRoute>} />
+          <Route path="/dashboard/transacoes" element={<ProtectedRoute roles={['Comprador', 'Vendedor', 'Administrador']}><Transactions /></ProtectedRoute>} />
+          <Route path="/dashboard/listas/:id" element={<ProtectedRoute roles={['Comprador']}><Wishlist /></ProtectedRoute>} />
+          <Route path="/dashboard/alertas" element={<ProtectedRoute roles={['Comprador', 'Vendedor']}><Alerts /></ProtectedRoute>} />
+          <Route path="/dashboard/usuarios" element={<ProtectedRoute roles={['Administrador']}><Users /></ProtectedRoute>} />
+          <Route path="/dashboard/custodias" element={<ProtectedRoute roles={['Administrador']}><Custody /></ProtectedRoute>} />
+          <Route path="/dashboard/consignacoes" element={<ProtectedRoute roles={['Administrador']}><Consignments /></ProtectedRoute>} />
+          <Route path="/dashboard/parcerias" element={<ProtectedRoute roles={['Administrador']}><Partnerships /></ProtectedRoute>} />
+          <Route path="/dashboard/onboarding" element={<ProtectedRoute roles={['Vendedor']}><SellerOnboarding /></ProtectedRoute>} />
+          <Route path="/dashboard/saude" element={<ProtectedRoute><CustomerHealth /></ProtectedRoute>} />
+          <Route path="/dashboard/dossies" element={<ProtectedRoute roles={['Administrador', 'Vendedor']}><OnboardingDossiers /></ProtectedRoute>} />
+          <Route path="/dashboard/recuperacao" element={<ProtectedRoute><RecoveryPlans /></ProtectedRoute>} />
+          <Route path="/dashboard/relatorios" element={<ProtectedRoute roles={['Administrador']}><Reports /></ProtectedRoute>} />
+          <Route path="/lista-de-espera" element={<Waitlist />} />
+          <Route path="/dashboard/lista-espera" element={<ProtectedRoute roles={['Administrador']}><WaitlistAdmin /></ProtectedRoute>} />
+          <Route path="/dashboard/indicacoes" element={<ProtectedRoute><Referrals /></ProtectedRoute>} />
+          <Route path="/dashboard/growth" element={<ProtectedRoute roles={['Administrador']}><Growth /></ProtectedRoute>} />
+          <Route path="/dashboard/colecao" element={<ProtectedRoute roles={['Comprador']}><Collection /></ProtectedRoute>} />
+          <Route path="/dashboard/avaliacoes" element={<ProtectedRoute roles={['Comprador', 'Vendedor', 'Administrador']}><Reviews /></ProtectedRoute>} />
         </Routes>
       </main>
     </div>

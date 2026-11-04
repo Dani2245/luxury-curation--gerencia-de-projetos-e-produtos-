@@ -1,29 +1,24 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { apiFetch, saveSession } from '../services/api';
+import { resolveReturnPath } from '../services/navigation';
 
 const Auth = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const navigate = useNavigate();
+  // origem do acesso (ex.: link ou QR do passaporte), registrada com a sessão (RNF06)
+  const [searchParams] = useSearchParams();
+  const origem = searchParams.get('origem') || undefined;
 
   const handleLogin = async (e) => {
     e.preventDefault();
+    setError('');
     try {
-      const response = await fetch('http://localhost:3000/api/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
-      });
-
-      if (!response.ok) {
-        throw new Error('Credenciais inválidas');
-      }
-
-      const data = await response.json();
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('user', JSON.stringify(data.user));
-      navigate('/dashboard');
+      const data = await apiFetch('/login', { method: 'POST', body: { email, password, origem } });
+      saveSession(data.token, data.user);
+      navigate(resolveReturnPath(searchParams.get('retorno')), { replace: true });
     } catch (err) {
       setError(err.message);
     }
@@ -34,21 +29,22 @@ const Auth = () => {
       <div className="max-w-md w-full bg-[#111] border border-gray-800 p-8">
         <div className="text-center mb-8">
           <h2 className="text-3xl font-serif text-white tracking-wide">Acesso Privado</h2>
-          <p className="text-gray-400 font-sans text-sm mt-2">Área exclusiva para parceiros e vendedores.</p>
+          <p className="text-gray-400 font-sans text-sm mt-2">Área exclusiva para usuários cadastrados.</p>
         </div>
 
         {error && (
-          <div className="bg-red-900/50 border border-red-500 text-red-200 px-4 py-3 mb-6 font-sans text-sm text-center">
+          <div role="alert" className="bg-red-900/50 border border-red-500 text-red-200 px-4 py-3 mb-6 font-sans text-sm text-center">
             {error}
           </div>
         )}
 
         <form onSubmit={handleLogin} className="space-y-6">
           <div>
-            <label className="block text-gray-400 font-sans text-xs tracking-widest uppercase mb-2">
+            <label htmlFor="email" className="block text-gray-400 font-sans text-xs tracking-widest uppercase mb-2">
               E-mail
             </label>
             <input 
+              id="email"
               type="email" 
               required
               value={email}
@@ -59,10 +55,11 @@ const Auth = () => {
           </div>
 
           <div>
-            <label className="block text-gray-400 font-sans text-xs tracking-widest uppercase mb-2">
+            <label htmlFor="password" className="block text-gray-400 font-sans text-xs tracking-widest uppercase mb-2">
               Senha
             </label>
             <input 
+              id="password"
               type="password" 
               required
               value={password}
