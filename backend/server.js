@@ -50,6 +50,9 @@ app.use('/api/listas', listasRoutes);
 app.use('/api/alertas', alertasRoutes);
 app.use('/api/notificacoes', notificacoesRoutes);
 app.use('/api/custodias', custodiasRoutes);
+app.use('/api/consignacoes', require('./routes/consignacoes.routes'));
+app.use('/api/parcerias', require('./routes/parcerias.routes'));
+app.use('/api/clientes', require('./routes/clientes.routes'));
 app.use('/api/relatorios', financeiroRoutes);
 app.use('/api/lista-espera', listaEsperaRoutes);
 app.use('/api/indicacoes', indicacoesRoutes);
@@ -65,7 +68,7 @@ app.use((req, res) => {
 });
 
 // Middleware Global de Tratamento de Erros
-app.use((err, req, res, next) => {
+app.use((err, req, res, _next) => {
   if (err.name === 'MulterError') {
     const documentos = req.baseUrl.startsWith('/api/passaportes');
     const limite = err.code === 'LIMIT_FILE_SIZE';

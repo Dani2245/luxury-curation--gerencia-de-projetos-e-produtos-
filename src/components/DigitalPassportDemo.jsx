@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ShieldCheck, History, FileText, CheckCircle2, Lock } from 'lucide-react';
+import { ShieldCheck, FileText, CheckCircle2, Lock } from 'lucide-react';
 import imgWatch from '../assets/placeholders/silver-watch.jpg';
 
 const DigitalPassportDemo = () => {

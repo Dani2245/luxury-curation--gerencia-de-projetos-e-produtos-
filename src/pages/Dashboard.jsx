@@ -49,6 +49,8 @@ const Dashboard = () => {
           )}
           {user.perfil === 'Administrador' && (
             <><Link to="/dashboard/custodias" className={linkClass}>Custódia física</Link>
+            <Link to="/dashboard/consignacoes" className={linkClass}>Consignação</Link>
+            <Link to="/dashboard/parcerias" className={linkClass}>Parcerias</Link>
             <Link to="/dashboard/relatorios" className={linkClass}>Relatórios e financeiro</Link>
             <Link to="/dashboard/growth" className={linkClass}>Growth</Link>
             <Link to="/dashboard/lista-espera" className={linkClass}>Lista de espera</Link>
@@ -74,6 +76,8 @@ const Dashboard = () => {
           {['Administrador', 'Vendedor'].includes(user.perfil) && <Link to="/dashboard/categorias" className={linkClass}>Categorias de peças</Link>}
           <Link to="/dashboard/laudos" className={linkClass}>Laudos periciais</Link>
           <Link to="/dashboard/indicacoes" className={linkClass}>Indicações</Link>
+          <Link to="/dashboard/saude" className={linkClass}>{user.perfil==='Administrador'?'Saúde da base':'Meu Health Score'}</Link>
+          {user.perfil==='Vendedor'&&<Link to="/dashboard/onboarding" className={linkClass}>Primeiros passos</Link>}
           {user.perfil === 'Comprador' && <Link to="/dashboard/colecao" className={linkClass}>Minha coleção</Link>}
           {user.perfil !== 'Perito' && <Link to="/dashboard/avaliacoes" className={linkClass}>Avaliações</Link>}
           <button

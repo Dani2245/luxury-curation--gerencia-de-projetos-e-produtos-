@@ -36,7 +36,10 @@ A luxurious, high-end web application for curating rare art, iconic objects, and
    - `schema-habito.sql` (coleção privada, exportação, avaliações e relatório do hábito);
    - `schema-conservacao.sql` (lembrete de conservação da coleção);
    - `schema-release3.sql` (categorias, laudos, assinatura, A5 e acervo privado);
-   - `schema-release3-growth.sql` (pilotos X1–X5, evidências, exemplo público e A4).
+   - `schema-release3-growth.sql` (pilotos X1–X5, evidências, exemplo público e A4);
+   - `schema-release4.sql` (consignação, baixa integrada à venda e parcerias);
+   - `schema-release4-clientes.sql` (onboarding, Health Score configurável e saúde agregada da base);
+   - `schema-release4-email.sql` (fila opcional de e-mail dos alertas).
 
    Em um projeto existente que já recebeu as migrações de listas e alertas, aplique apenas os scripts seguintes a elas, na ordem acima. Eles são aditivos e podem ser reaplicados. Não recrie o banco nem reaplique o seed para atualizar o projeto. Vendas históricas confirmadas continuam concluídas; a migração não inventa pagamentos ou lançamentos financeiros retroativos.
 3. Inicie a API e o frontend:
@@ -51,6 +54,8 @@ A luxurious, high-end web application for curating rare art, iconic objects, and
    ```
 
 O frontend usa `VITE_API_URL` (padrão `http://localhost:3000`) e o backend aceita as origens de `FRONTEND_URL` (padrão `http://localhost:5173`) no CORS.
+
+Para a release 4, consulte o [roteiro e regras](docs/RELEASE4.md), o [manual de instalação, publicação e contingência](docs/IMPLANTACAO.md) e a [validação completa: 283 testes aprovados](docs/VALIDACAO_RELEASE4.md). Durante apresentação e Selenium, use `npm start` no backend para evitar reinicializações automáticas.
 
 Usuários de teste criados pelo seed (senha de desenvolvimento em `backend/database/seed.sql`): `admin@`, `vendedor@`, `comprador@` e `perito@lastro.com`.
 
@@ -72,7 +77,7 @@ npx mocha tests/e2e/links.test.js
 
 - Configurável por `E2E_BASE_URL` (padrão `http://localhost:5173`), `E2E_API_URL` (padrão `http://localhost:3000`) e `E2E_HEADLESS=false` para ver o navegador.
 - No Windows, os logs internos do Chrome ficam desabilitados no terminal para evitar mensagens repetidas do atualizador. A saída e as falhas do Mocha/Selenium continuam visíveis. Para investigar o navegador, execute com `E2E_CHROME_LOGS=true`.
-- As suítes cobrem RFC01 a RFC07, RFC10, RF01, RF02, RFC11 a RFC13 (inclusive os prazos da conferência e da disputa), RFC16 a RFC24, RF04, RF05, RNF05, RNF06 e o suporte aos pilotos X1–X5. Elas criam os próprios dados (peças com prefixo `E2E `). A função `e2e_ajustar_prazo`, também do `test-support.sql`, antecipa prazos de transações de teste para demonstrar prazos próximos e vencidos; `e2e_datar_laudo` verifica a janela de 60 dias do A5 usando apenas laudos de teste.
+- As suítes cobrem RFC01 a RFC10, RF01 a RF03, RFC11 a RFC15 (inclusive os prazos da conferência e da disputa), RFC16 a RFC24, RF04, RF05, RNF05, RNF06 e o suporte aos pilotos X1–X5. Elas criam os próprios dados (peças com prefixo `E2E `). A função `e2e_ajustar_prazo`, também do `test-support.sql`, antecipa prazos de transações de teste para demonstrar prazos próximos e vencidos; `e2e_datar_laudo` verifica a janela de 60 dias do A5 usando apenas laudos de teste.
 - Para apagar esses dados ao final (peças vendidas não podem ser removidas pela aplicação), execute a versão atual de `backend/database/test-support.sql` no ambiente de testes, inclusive se já instalou uma versão anterior. Ela inclui a limpeza das novas entidades, restrita aos dados de teste. **Não use esse arquivo em produção.** As suítes devem rodar sequencialmente, sem outra execução simultânea no mesmo banco.
 
 ## Regras de negócio implementadas
@@ -83,7 +88,7 @@ npx mocha tests/e2e/links.test.js
 - **Links de compartilhamento do passaporte (RFC16):** o proprietário atual da peça (vendedor ou comprador) gera link e QR code escolhendo os campos públicos; identidade dos proprietários e valor ficam privados por padrão. A consulta em `/p/<código>` não exige cadastro, mostra só os campos liberados (documentos aparecem sem os arquivos, com o hash) e cada acesso é registrado, separando link e QR code. O dono altera os campos e a validade ou revoga o link, que deixa de dar acesso na hora. Quando a peça é vendida, os links do antigo dono são encerrados.
 - **Eventos de uso (RNF06):** login, consultas ao passaporte (logado, por link ou QR), emissão, atualização e transferência do passaporte, links, cadastro de peças, decisões da curadoria e transações são registrados com data, origem e indicação de gatilho externo (link, QR, alerta ou e-mail). A consulta de um usuário ao mesmo passaporte conta uma vez a cada 30 minutos. O administrador vê no painel apenas o resumo agregado por período.
 - **Lista de desejos (RFC22):** o comprador cria listas por categoria e faixa de valor ou salva uma peça consultada (em lista existente ou nova). A lista mostra as peças salvas com a situação (disponível, em negociação, vendida ou indisponível) e as peças publicadas pela curadoria que combinam com os critérios, destacando como novas as publicadas depois da criação da lista. Excluir a lista exclui os alertas vinculados. O administrador vê só a demanda agregada por categoria e as peças mais salvas.
-- **Alertas e lembretes (RFC21):** o comprador recebe alerta de peça nova compatível com uma lista (semanal por padrão) e o vendedor, lembrete das peças do estoque com passaporte incompleto, isto é, sem passaporte, laudo pericial, nota fiscal ou fotografia (mensal por padrão). O envio é feito na plataforma, como notificação, quando o usuário entra e só se houver novidade; nenhum aviso se repete antes do próximo período. Todo alerta pode ser desligado com uma ação, alterado (frequência e canal; o e-mail fica para uma próxima versão) ou excluído. O administrador vê a taxa de desativação (alertas desligados ou excluídos enquanto ligados, sobre os criados). O comprador também pode ligar o lembrete de conservação (mensal por padrão), que avisa das peças da coleção privada cujo estado não é atualizado há mais de 90 dias e leva à coleção; atualizar a peça encerra o aviso.
+- **Alertas e lembretes (RFC21):** o comprador recebe alerta de peça nova compatível com uma lista (semanal por padrão) e o vendedor, lembrete das peças do estoque com passaporte incompleto, isto é, sem passaporte, laudo pericial, nota fiscal ou fotografia (mensal por padrão). O envio é feito na plataforma, como notificação, quando o usuário entra e só se houver novidade; nenhum aviso se repete antes do próximo período. Todo alerta pode ser desligado com uma ação, alterado (frequência e canal; o e-mail é opcional e depende de SMTP configurado) ou excluído. O administrador vê a taxa de desativação (alertas desligados ou excluídos enquanto ligados, sobre os criados). O comprador também pode ligar o lembrete de conservação (mensal por padrão), que avisa das peças da coleção privada cujo estado não é atualizado há mais de 90 dias e leva à coleção; atualizar a peça encerra o aviso.
 
 ## Growth e hábito
 

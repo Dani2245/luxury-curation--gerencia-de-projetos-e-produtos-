@@ -3,6 +3,7 @@ const router = express.Router();
 const validate = require('../middlewares/validate');
 const { authenticate, authorize } = require('../middlewares/auth');
 const { handleDbError } = require('../utils/db-error');
+const { emailEnabled, deliverEmails } = require('../services/alerta-email');
 const { resumoEventosQuerySchema } = require('../schemas/evento.schema');
 const {
   createAlertaSchema,
@@ -58,6 +59,14 @@ router.get('/passaportes-incompletos', authenticate, authorize('Vendedor'), asyn
   res.json(data.map((p) => ({ pecaId: p.peca_id, nome: p.nome, pendencias: p.pendencias || [] })));
 });
 
+router.get('/canais', ...usuario, (req, res) => res.json({ email: emailEnabled() }));
+router.post('/email/repetir', ...usuario, async (req, res) => {
+  if (!emailEnabled()) return res.status(400).json({ message: 'O envio por e-mail ainda não está disponível. Use a plataforma' });
+  const { error } = await req.db.rpc('repetir_emails_falhos');
+  if (error) return handleDbError(res, error, 'Erro ao tentar novamente');
+  void deliverEmails(req.db, req.user).catch(() => console.warn('[Alertas] Fila de email temporariamente indisponível'));
+  res.sendStatus(202);
+});
 // GET /api/alertas - Alertas do usuário (RFS74)
 router.get('/', ...usuario, async (req, res) => {
   const { data, error } = await req.db.from('vw_alertas').select('*').order('criado_em', { ascending: false });
@@ -80,12 +89,20 @@ router.get('/:id/envios', ...usuario, validate(alertaIdParamSchema, 'params'), a
     .limit(50);
   if (error) return handleDbError(res, error, 'Erro ao consultar o histórico de envios');
 
-  res.json(data.map((e) => ({ id: e.id, titulo: e.titulo, mensagem: e.mensagem, criadoEm: e.criado_em, lidaEm: e.lida_em })));
+  if (data.length === 0) return res.json([]);
+  const { data: emails, error: emailError } = await req.db.from('alerta_email_fila')
+    .select('envio_id,status,enviado_em,erro').in('envio_id', data.map((e) => e.id));
+  if (emailError) return handleDbError(res, emailError, 'Erro ao consultar entregas de email');
+  res.json(data.map((e) => ({
+    id: e.id, titulo: e.titulo, mensagem: e.mensagem, criadoEm: e.criado_em, lidaEm: e.lida_em,
+    email: emails.find((m) => m.envio_id === e.id) || null
+  })));
 });
 
 // POST /api/alertas - Configurar alerta de peça compatível ou lembrete de passaporte incompleto (RFS73)
 router.post('/', ...usuario, validate(createAlertaSchema), async (req, res) => {
   const { tipo, listaId, frequencia, canal } = req.body;
+  if (canal === 'email' && !emailEnabled()) return res.status(400).json({ message: 'O envio por e-mail ainda não está disponível. Use a plataforma' });
   const { data: id, error } = await req.db.rpc('criar_alerta', {
     p_tipo: tipo,
     p_lista_id: listaId ?? null,
@@ -100,6 +117,7 @@ router.post('/', ...usuario, validate(createAlertaSchema), async (req, res) => {
 
 // PUT /api/alertas/:id - Alterar frequência e canal (RFS75)
 router.put('/:id', ...usuario, validate(alertaIdParamSchema, 'params'), validate(updateAlertaSchema), async (req, res) => {
+  if (req.body.canal === 'email' && !emailEnabled()) return res.status(400).json({ message: 'O envio por e-mail ainda não está disponível. Use a plataforma' });
   const { error } = await req.db.rpc('editar_alerta', {
     p_id: req.params.id,
     p_frequencia: req.body.frequencia,

@@ -10,6 +10,7 @@ const emptyForm = { codigo: '', nome: '', etapa: 'aquisição', lado: 'ambos', f
 export default function IndicatorsManager() {
   const [items, setItems] = useState([]);
   const [formulas, setFormulas] = useState([]);
+  const [loadingFormulas, setLoadingFormulas] = useState(true);
   const [filters, setFilters] = useState({ etapa: '', lado: '' });
   const [form, setForm] = useState(emptyForm);
   const [editingId, setEditingId] = useState(null);
@@ -24,7 +25,7 @@ export default function IndicatorsManager() {
   }, []);
   useEffect(() => {
     load({});
-    apiFetch('/growth/formulas').then(setFormulas).catch((e) => setError(e.message));
+    apiFetch('/growth/formulas').then(setFormulas).catch((e) => setError(e.message)).finally(() => setLoadingFormulas(false));
   }, [load]);
 
   const run = async (fn, message) => {
@@ -35,6 +36,7 @@ export default function IndicatorsManager() {
   };
   const submit = async (e) => {
     e.preventDefault();
+    if (loadingFormulas || formulas.length === 0) return;
     const ok = await run(() => apiFetch(editingId ? `/growth/indicadores/${editingId}` : '/growth/indicadores', { method: editingId ? 'PUT' : 'POST', body: form }),
       editingId ? 'Indicador atualizado. As metas anteriores ficaram no histórico.' : 'Indicador cadastrado.');
     if (ok) { setForm(emptyForm); setEditingId(null); }
@@ -53,6 +55,7 @@ export default function IndicatorsManager() {
 
   return (
     <section aria-label="Indicadores de growth">
+      {loadingFormulas && <p role="status" className="text-gray-400 mb-3">Carregando fórmulas dos indicadores...</p>}
       <form onSubmit={submit} aria-label={editingId ? 'Editar indicador' : 'Novo indicador'} className="border border-gray-800 p-5 mb-6 grid sm:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
         <Field id="i-codigo" label="Código" required maxLength={10} value={form.codigo} onChange={setFld('codigo')} />
         <Field id="i-nome" label="Nome" required maxLength={150} value={form.nome} onChange={setFld('nome')} />
@@ -62,7 +65,7 @@ export default function IndicatorsManager() {
         <Field id="i-min" label="Meta mínima" type="number" step="0.01" value={form.metaMin} onChange={setFld('metaMin')} />
         <Field id="i-max" label="Meta máxima" type="number" step="0.01" value={form.metaMax} onChange={setFld('metaMax')} />
         <Field id="i-frequencia" label="Frequência"><select id="i-frequencia" className={inputClass} value={form.frequencia} onChange={setFld('frequencia')}>{FREQUENCIAS.map((f) => <option key={f} value={f}>{f}</option>)}</select></Field>
-        <div className="flex gap-2"><button disabled={busy} className={primaryClass}>Salvar indicador</button>{editingId && <button type="button" className={buttonClass} onClick={() => { setEditingId(null); setForm(emptyForm); }}>Cancelar edição</button>}</div>
+        <div className="flex gap-2"><button disabled={busy || loadingFormulas || formulas.length === 0} className={primaryClass}>Salvar indicador</button>{editingId && <button type="button" className={buttonClass} onClick={() => { setEditingId(null); setForm(emptyForm); }}>Cancelar edição</button>}</div>
       </form>
       <form onSubmit={(e) => { e.preventDefault(); load(filters); }} className="flex flex-wrap gap-4 items-end mb-4">
         <Field id="i-f-etapa" label="Etapa"><select id="i-f-etapa" className={inputClass} value={filters.etapa} onChange={(e) => setFilters({ ...filters, etapa: e.target.value })}><option value="">Todas</option>{ETAPAS_INDICADOR.map((et) => <option key={et} value={et}>{et}</option>)}</select></Field>

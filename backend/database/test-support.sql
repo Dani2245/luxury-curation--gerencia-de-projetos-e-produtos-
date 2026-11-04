@@ -23,6 +23,10 @@ begin
 
   -- Novos modulos: somente registros vinculados as pecas/descricoes desse teste.
   -- Blocos dinamicos permitem instalar o apoio antes ou depois das migracoes opcionais.
+  if to_regclass('public.consignacoes') is not null then
+    execute 'delete from public.consignacoes c using public.pecas p where c.peca_id=p.id and p.nome like $1' using p_prefixo || '%';
+    execute 'delete from public.parcerias where nome like $1' using p_prefixo || '%';
+  end if;
   if to_regclass('public.custodias') is not null then
     execute 'delete from public.custodias c using public.pecas p where c.peca_id = p.id and p.nome like $1'
       using p_prefixo || '%';

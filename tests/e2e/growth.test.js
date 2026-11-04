@@ -187,6 +187,35 @@ describe('RFC19, RFC20 e RF04 - Indicadores, experimentos e painel de growth', f
   });
 
   describe('RFC19 - Editar e desativar indicador', () => {
+    it('aguarda as fórmulas antes de habilitar a gravação do indicador', async () => {
+      // Reproduz uma resposta lenta sem depender da velocidade da conexão real.
+      await driver.executeScript(`
+        const original = window.fetch;
+        window.__lastroRestoreFetch = () => { window.fetch = original; };
+        window.fetch = (input, init) => String(input).endsWith('/api/growth/formulas')
+          ? new Promise((resolve, reject) => {
+              window.__lastroReleaseFormulas = () => original(input, init).then(resolve, reject);
+            })
+          : original(input, init);
+      `);
+      try {
+        await tab(driver, 'Indicadores');
+        await clickLabeled(driver, 'Editar indicador NSM');
+        assert.equal(await driver.findElement(By.id('i-formula')).getAttribute('value'), '');
+        const save = await driver.findElement(By.xpath('//button[normalize-space(.)="Salvar indicador"]'));
+        assert.equal(await save.isEnabled(), false, 'Não deve permitir salvar antes de carregar as fórmulas');
+        await driver.executeScript('window.__lastroReleaseFormulas(); delete window.__lastroReleaseFormulas');
+        await driver.wait(async () => (await driver.findElement(By.id('i-formula')).getAttribute('value')) !== '', 10000);
+        await driver.wait(until.elementIsEnabled(save), 10000);
+      } finally {
+        await driver.executeScript(`
+          window.__lastroReleaseFormulas?.(); window.__lastroRestoreFetch?.();
+          delete window.__lastroReleaseFormulas; delete window.__lastroRestoreFetch;
+        `);
+        await clickButton(driver, 'Cancelar edição');
+      }
+    });
+
     it('RFS67 - atualiza as metas e guarda o histórico das metas anteriores', async () => {
       await tab(driver, 'Indicadores');
       await clickLabeled(driver, `Editar indicador ${codigo}`);

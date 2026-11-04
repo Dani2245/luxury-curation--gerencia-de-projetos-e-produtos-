@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { apiFetch, saveSession } from '../services/api';
+import { resolveReturnPath } from '../services/navigation';
 
 const Auth = () => {
   const [email, setEmail] = useState('');
@@ -17,7 +18,7 @@ const Auth = () => {
     try {
       const data = await apiFetch('/login', { method: 'POST', body: { email, password, origem } });
       saveSession(data.token, data.user);
-      navigate('/dashboard');
+      navigate(resolveReturnPath(searchParams.get('retorno')), { replace: true });
     } catch (err) {
       setError(err.message);
     }

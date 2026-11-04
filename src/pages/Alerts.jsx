@@ -8,10 +8,10 @@ const inputClass = 'w-full bg-[#0a0a0a] border border-gray-700 px-4 py-3 text-wh
 const labelClass = 'block text-gray-400 font-sans text-xs tracking-widest uppercase mb-2';
 const actionClass = 'flex items-center gap-2 border border-gray-700 px-3 py-2 font-sans text-xs uppercase tracking-widest text-gray-300 hover:border-white transition-colors';
 
-const CanalOptions = () => (
+const CanalOptions = ({email=false}) => (
   <>
     <option value="plataforma">Plataforma</option>
-    <option value="email" disabled>E-mail (indisponível nesta versão)</option>
+    <option value="email" disabled={!email}>{email?'E-mail e cópia na plataforma':'E-mail (aguardando configuração)'}</option>
   </>
 );
 
@@ -35,6 +35,7 @@ const Alerts = () => {
   const [frequencia, setFrequencia] = useState(comprador ? 'semanal' : 'mensal');
   const [frequenciaConservacao, setFrequenciaConservacao] = useState('mensal');
   const [canal, setCanal] = useState('plataforma');
+  const [emailDisponivel,setEmailDisponivel]=useState(false);
   const [edicao, setEdicao] = useState({});
   const [historico, setHistorico] = useState({});
   const [loading, setLoading] = useState(true);
@@ -43,11 +44,13 @@ const Alerts = () => {
 
   const load = useCallback(async () => {
     try {
-      const [alertasData, extra] = await Promise.all([
+      const [alertasData, extra, canais] = await Promise.all([
         apiFetch('/alertas'),
-        comprador ? apiFetch('/listas') : apiFetch('/alertas/passaportes-incompletos')
+        comprador ? apiFetch('/listas') : apiFetch('/alertas/passaportes-incompletos'),
+        apiFetch('/alertas/canais')
       ]);
       setAlertas(alertasData);
+      setEmailDisponivel(canais.email);
       setEdicao(Object.fromEntries(alertasData.map((a) => [a.id, { frequencia: a.frequencia, canal: a.canal }])));
       if (comprador) setListas(extra);
       else setIncompletos(extra);
@@ -164,7 +167,7 @@ const Alerts = () => {
               <div>
                 <label htmlFor="alerta-canal" className={labelClass}>Canal</label>
                 <select id="alerta-canal" value={canal} onChange={(e) => setCanal(e.target.value)} className={inputClass}>
-                  <CanalOptions />
+                  <CanalOptions email={emailDisponivel}/>
                 </select>
               </div>
             </div>
@@ -237,7 +240,7 @@ const Alerts = () => {
                   <div className="md:w-64">
                     <label htmlFor={`alerta-${a.id}-canal`} className={labelClass}>Canal</label>
                     <select id={`alerta-${a.id}-canal`} value={edicao[a.id]?.canal} onChange={(e) => setCampo(a.id, 'canal', e.target.value)} className={inputClass}>
-                      <CanalOptions />
+                      <CanalOptions email={emailDisponivel}/>
                     </select>
                   </div>
                   <div className="flex flex-wrap gap-3">
@@ -271,6 +274,8 @@ const Alerts = () => {
                       {historico[a.id].map((e) => (
                         <li key={e.id}>
                           <span className="text-gray-200">{e.titulo}</span> · {formatDateTime(e.criadoEm)}
+                          {e.email&&<p>E-mail: {e.email.status==='enviado'?'aceito pelo servidor de e-mail':e.email.status}{e.email.erro&&` · ${e.email.erro}`}</p>}
+                          {e.email?.status==='falhou'&&emailDisponivel&&<button type="button" className={actionClass} onClick={()=>run(()=>apiFetch('/alertas/email/repetir',{method:'POST'}),'Nova tentativa de e-mail iniciada. Reabra o histórico para consultar o resultado.')}>Tentar e-mail novamente</button>}
                           <p className="text-gray-500 text-xs">{e.mensagem}</p>
                         </li>
                       ))}

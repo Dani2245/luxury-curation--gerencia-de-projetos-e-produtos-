@@ -4,6 +4,7 @@ const validate = require('../middlewares/validate');
 const { authenticate, authorize } = require('../middlewares/auth');
 const { handleDbError } = require('../utils/db-error');
 const { notificacaoIdParamSchema } = require('../schemas/alerta.schema');
+const { deliverEmails } = require('../services/alerta-email');
 
 // Notificações na plataforma, geradas pelos alertas e lembretes (RFC21, canal plataforma)
 router.use(authenticate, authorize('Comprador', 'Vendedor'));
@@ -12,6 +13,7 @@ router.use(authenticate, authorize('Comprador', 'Vendedor'));
 router.get('/', async (req, res) => {
   const { error: processarError } = await req.db.rpc('processar_alertas');
   if (processarError) console.warn('[Alertas] Falha ao processar os alertas:', processarError.message);
+  void deliverEmails(req.db, req.user).catch(() => console.warn('[Alertas] Fila de email temporariamente indisponível'));
 
   const [lista, naoLidas] = await Promise.all([
     req.db.from('alerta_envios').select('id, titulo, mensagem, link, criado_em, lida_em').order('criado_em', { ascending: false }).limit(20),

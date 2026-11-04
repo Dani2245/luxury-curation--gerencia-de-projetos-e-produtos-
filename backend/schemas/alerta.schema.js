@@ -2,7 +2,7 @@ const { z } = require('zod');
 
 const TIPOS = ['peca compativel', 'passaporte incompleto', 'conservacao'];
 const FREQUENCIAS = ['diaria', 'semanal', 'mensal'];
-// o e-mail é aceito aqui e recusado pelo banco com a mensagem de canal indisponível nesta versão
+// O transporte de email é opcional; a API verifica a configuração do servidor.
 const CANAIS = ['plataforma', 'email'];
 
 const emptyToUndefined = (val) => (typeof val === 'string' && val.trim() === '' ? undefined : val);

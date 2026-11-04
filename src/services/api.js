@@ -1,3 +1,5 @@
+import { loginUrl } from './navigation';
+
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 export class ApiError extends Error {
@@ -59,8 +61,9 @@ export const apiFetch = async (path, { method = 'GET', body, formData, params } 
 
   if (!response.ok) {
     if (response.status === 401 && token) {
+      const destination = loginUrl(window.location);
       clearSession();
-      window.location.assign('/login');
+      window.location.assign(destination);
     }
     throw new ApiError(data.message || 'Erro ao processar a requisição', response.status);
   }
