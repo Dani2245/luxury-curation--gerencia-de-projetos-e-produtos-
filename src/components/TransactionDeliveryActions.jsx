@@ -5,7 +5,7 @@ import { buttonClass, primaryClass, inputClass, labelClass } from '../services/o
 // Formulários de cada ação com texto: rótulo do campo, botão, requisição e mensagem de sucesso
 const FORMS = {
   envio: { label: 'Rastreio ou comprovante de envio', max: 200, button: 'envio', method: 'POST', path: 'envio', body: (text) => ({ rastreio: text }), message: () => 'Envio registrado.' },
-  contestar: { label: 'Motivo da contestação', max: 1000, button: 'contestação', method: 'POST', path: 'conferencia', body: (text, estado) => ({ aprovada: false, motivo: text, estadoObservado: estado }), message: () => 'Entrega contestada. O pagamento permanece retido.' },
+  contestar: { label: 'Motivo da contestação', max: 1000, button: 'contestação', method: 'POST', path: 'conferencia', body: (text, estado, categoria) => ({ aprovada: false, motivo: text, estadoObservado: estado, categoriaMotivo: categoria }), message: () => 'Entrega contestada. O pagamento permanece retido.' },
   liberar: { label: 'Justificativa da decisão', max: 1000, button: 'liberação', method: 'POST', path: 'resolucao', body: (text) => ({ decisao: 'liberar', motivo: text }), message: (t) => t.status === 'em_conferencia' ? 'Prazo de conferência vencido: venda concluída e pagamento simulado liberado.' : 'Contestação resolvida: venda concluída e pagamento simulado liberado.' },
   estornar: { label: 'Justificativa da decisão', max: 1000, button: 'estorno', method: 'POST', path: 'resolucao', body: (text) => ({ decisao: 'estornar', motivo: text }), message: () => 'Contestação resolvida: pagamento simulado estornado.' },
   excluir: { label: 'Motivo da exclusão da retenção', max: 500, button: 'exclusão', method: 'DELETE', path: 'pagamento', body: (text) => ({ motivo: text }), message: () => 'Retenção excluída. A transação voltou a aguardar o pagamento.' }
@@ -15,14 +15,15 @@ export default function TransactionDeliveryActions({ transaction: t, perfil, bus
   const [form, setForm] = useState(null);
   const [text, setText] = useState('');
   const [estado, setEstado] = useState('');
+  const [categoria, setCategoria] = useState('outro');
   const post = (path, body, message) => act(message, () => apiFetch(`/transacoes/${t.id}/${path}`, { method: 'POST', body }));
   const submit = async (e) => {
     e.preventDefault();
     const f = FORMS[form];
-    const ok = await act(f.message(t), () => apiFetch(`/transacoes/${t.id}/${f.path}`, { method: f.method, body: f.body(text, estado) }));
+    const ok = await act(f.message(t), () => apiFetch(`/transacoes/${t.id}/${f.path}`, { method: f.method, body: f.body(text, estado, categoria) }));
     if (ok) { setForm(null); setText(''); setEstado(''); }
   };
-  const show = (kind) => { setForm(kind); setText(''); setEstado(''); };
+  const show = (kind) => { setForm(kind); setText(''); setEstado(''); setCategoria('outro'); };
   // RFS39: depois do prazo a contestação não é aceita; o administrador pode liberar o pagamento retido
   const vencida = t.status === 'em_conferencia' && t.prazoSituacao === 'vencido';
   return <div className="space-y-3">
@@ -45,6 +46,10 @@ export default function TransactionDeliveryActions({ transaction: t, perfil, bus
       <label htmlFor={`entrega-${t.id}`} className={labelClass}>{FORMS[form].label}</label>
       <textarea id={`entrega-${t.id}`} className={inputClass} required maxLength={FORMS[form].max} value={text} onChange={(e) => setText(e.target.value)} />
       {form === 'contestar' && <>
+        <label htmlFor={`categoria-contestacao-${t.id}`} className={`${labelClass} mt-3`}>Categoria do motivo</label>
+        <select id={`categoria-contestacao-${t.id}`} className={inputClass} value={categoria} onChange={e => setCategoria(e.target.value)}>
+          <option value="autenticidade">Autenticidade</option><option value="conservacao">Estado de conservação</option><option value="documentacao">Documentação</option><option value="entrega">Entrega</option><option value="outro">Outro</option>
+        </select>
         <label htmlFor={`estado-${t.id}`} className={`${labelClass} mt-3`}>Estado observado (opcional)</label>
         <textarea id={`estado-${t.id}`} className={inputClass} maxLength={1000} value={estado} onChange={(e) => setEstado(e.target.value)} />
       </>}

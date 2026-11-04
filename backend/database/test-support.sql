@@ -23,6 +23,10 @@ begin
 
   -- Novos modulos: somente registros vinculados as pecas/descricoes desse teste.
   -- Blocos dinamicos permitem instalar o apoio antes ou depois das migracoes opcionais.
+  if to_regclass('public.onboarding_dossies') is not null then
+    execute 'delete from public.onboarding_dossies d using public.pecas p where d.peca_id=p.id and p.nome like $1' using p_prefixo || '%';
+    execute 'delete from public.recuperacao_planos where objetivo like $1' using p_prefixo || '%';
+  end if;
   if to_regclass('public.consignacoes') is not null then
     execute 'delete from public.consignacoes c using public.pecas p where c.peca_id=p.id and p.nome like $1' using p_prefixo || '%';
     execute 'delete from public.parcerias where nome like $1' using p_prefixo || '%';
@@ -146,3 +150,29 @@ end;
 $$;
 revoke all on function public.e2e_datar_laudo(bigint,timestamptz) from public, anon;
 grant execute on function public.e2e_datar_laudo(bigint,timestamptz) to authenticated;
+
+-- Relogios controlados apenas para dossies/publicacoes de pecas E2E.
+create or replace function public.e2e_datar_cs(p_peca bigint,p_dias integer,p_alvo text) returns void
+language plpgsql security definer set search_path=public as $$
+begin
+  if not public.is_admin() then raise exception 'Acesso negado' using errcode='42501'; end if;
+  if p_dias is null or p_dias not between 0 and 366 or not exists(select 1 from public.pecas where id=p_peca and nome like 'E2E %') then raise exception 'Somente pecas E2E e intervalo de 0 a 366 dias' using errcode='P0001'; end if;
+  if p_alvo='etapa' then
+    update public.onboarding_dossies set etapa_em=now()-make_interval(days=>p_dias) where peca_id=p_peca;
+  elsif p_alvo='duracao_publicacao' then
+    update public.publicacoes_cs set cadastro_em=publicado_em-make_interval(days=>p_dias) where peca_id=p_peca;
+  else raise exception 'Alvo invalido' using errcode='P0001'; end if;
+end; $$;
+revoke all on function public.e2e_datar_cs(bigint,integer,text) from public,anon;
+grant execute on function public.e2e_datar_cs(bigint,integer,text) to authenticated;
+
+-- Demonstra atraso apenas em acoes de planos explicitamente criados pelos testes.
+create or replace function public.e2e_vencer_acao_cs(p_id bigint) returns void
+language plpgsql security definer set search_path=public as $$
+begin
+  if not public.is_admin() then raise exception 'Acesso negado' using errcode='42501'; end if;
+  if not exists(select 1 from public.recuperacao_acoes a join public.recuperacao_planos p on p.id=a.plano_id where a.id=p_id and p.objetivo like 'E2E %' and p.status='ativo' and a.status in ('pendente','em_andamento')) then raise exception 'Somente acoes E2E abertas' using errcode='P0001'; end if;
+  update public.recuperacao_acoes set prazo=(now() at time zone 'America/Sao_Paulo')::date-1 where id=p_id;
+end; $$;
+revoke all on function public.e2e_vencer_acao_cs(bigint) from public,anon;
+grant execute on function public.e2e_vencer_acao_cs(bigint) to authenticated;

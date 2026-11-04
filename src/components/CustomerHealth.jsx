@@ -1,4 +1,6 @@
 import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
+import CustomerOperationsMetrics from './CustomerOperationsMetrics';
 import OperationLayout, { Field, Feedback } from './OperationLayout';
 import { apiFetch, getUser, formatDateTime } from '../services/api';
 import { inputClass, primaryClass, buttonClass, today, displayDate } from '../services/operations';
@@ -84,6 +86,7 @@ export default function CustomerHealth() {
       }
     >
       <Feedback error={error} notice={notice} />
+      <Link className={`${buttonClass} inline-block mb-6`} to="/dashboard/recuperacao">Planos de recuperação</Link>
       {admin && (
         <form onSubmit={submit} className="grid sm:grid-cols-5 gap-4 mb-6 items-end">
           <Field
@@ -137,6 +140,7 @@ export default function CustomerHealth() {
           <p className="text-gray-400 mb-4">
             Período: {displayDate(data.inicio)} a {displayDate(data.fim)}
           </p>
+          {admin && <CustomerOperationsMetrics data={data.operacao} />}
           {admin ? (
             <>
               <div className="grid sm:grid-cols-3 gap-4 mb-6">

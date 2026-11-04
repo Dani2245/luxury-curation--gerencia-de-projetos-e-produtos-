@@ -33,6 +33,8 @@ import Consignments from './components/Consignments';
 import Partnerships from './components/Partnerships';
 import SellerOnboarding from './components/SellerOnboarding';
 import CustomerHealth from './components/CustomerHealth';
+import OnboardingDossiers from './components/OnboardingDossiers';
+import RecoveryPlans from './components/RecoveryPlans';
 
 const App = () => {
   return (
@@ -64,6 +66,8 @@ const App = () => {
           <Route path="/dashboard/parcerias" element={<ProtectedRoute roles={['Administrador']}><Partnerships /></ProtectedRoute>} />
           <Route path="/dashboard/onboarding" element={<ProtectedRoute roles={['Vendedor']}><SellerOnboarding /></ProtectedRoute>} />
           <Route path="/dashboard/saude" element={<ProtectedRoute><CustomerHealth /></ProtectedRoute>} />
+          <Route path="/dashboard/dossies" element={<ProtectedRoute roles={['Administrador', 'Vendedor']}><OnboardingDossiers /></ProtectedRoute>} />
+          <Route path="/dashboard/recuperacao" element={<ProtectedRoute><RecoveryPlans /></ProtectedRoute>} />
           <Route path="/dashboard/relatorios" element={<ProtectedRoute roles={['Administrador']}><Reports /></ProtectedRoute>} />
           <Route path="/lista-de-espera" element={<Waitlist />} />
           <Route path="/dashboard/lista-espera" element={<ProtectedRoute roles={['Administrador']}><WaitlistAdmin /></ProtectedRoute>} />

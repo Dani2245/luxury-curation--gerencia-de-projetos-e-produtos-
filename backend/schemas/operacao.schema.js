@@ -37,7 +37,7 @@ const createLancamentoSchema = z.object({
 const changeLancamentoSchema = z.object({ acao: z.enum(['liquidar', 'cancelar']), motivo: optionalText(500) })
   .refine((v) => v.acao !== 'cancelar' || Boolean(v.motivo), { message: 'Informe o motivo do cancelamento', path: ['motivo'] });
 const envioSchema = z.object({ rastreio: requiredText('o rastreio ou comprovante de envio') });
-const conferenciaSchema = z.object({ aprovada: z.boolean(), motivo: optionalText(1000), estadoObservado: optionalText(1000) })
+const conferenciaSchema = z.object({ aprovada: z.boolean(), motivo: optionalText(1000), estadoObservado: optionalText(1000), categoriaMotivo: z.enum(['autenticidade', 'conservacao', 'documentacao', 'entrega', 'outro']).optional() })
   .refine((v) => v.aprovada || Boolean(v.motivo), { message: 'Informe o motivo da contestação', path: ['motivo'] });
 const resolucaoSchema = z.object({ decisao: z.enum(['liberar', 'estornar']), motivo: requiredText('a justificativa', 1000) });
 // RFS37: prazo de conferência declarado pelo vendedor no aceite (padrão da plataforma se omitido)

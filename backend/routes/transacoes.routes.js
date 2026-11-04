@@ -145,7 +145,7 @@ router.post('/:id/envio', authenticate, authorize('Vendedor'), validate(idParams
 router.post('/:id/recebimento', authenticate, authorize('Comprador'), validate(idParams, 'params'),
   transition('receber_entrega', () => ({})));
 router.post('/:id/conferencia', authenticate, authorize('Comprador'), validate(idParams, 'params'), validate(conferenciaSchema),
-  transition('conferir_entrega', (b) => ({ p_aprovada: b.aprovada, p_motivo: b.motivo ?? null, p_estado: b.estadoObservado ?? null })));
+  transition('conferir_entrega', (b) => ({ p_aprovada: b.aprovada, p_motivo: b.motivo ?? null, p_estado: b.estadoObservado ?? null, p_categoria: b.categoriaMotivo || 'outro' })));
 router.post('/:id/resolucao', authenticate, authorize('Administrador'), validate(idParams, 'params'), validate(resolucaoSchema),
   transition('resolver_contestacao', (b) => ({ p_decisao: b.decisao, p_motivo: b.motivo })));
 // RFS44: exclui a retenção registrada por erro, antes do envio

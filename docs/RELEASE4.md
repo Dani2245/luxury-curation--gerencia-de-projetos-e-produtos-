@@ -12,19 +12,19 @@ As regras de consignação e parcerias seguem o PDF da proposta técnica (RFS25�
 
 Essas decisões orientam a implementação descrita abaixo. O grupo deve incorporá-las ao DRE; a confirmação do escopo pelo solicitante não substitui a homologação com o professor.
 
-## Divergências com o Kanban a alinhar antes do fechamento
+## Complemento aprovado a partir do Kanban
 
-Na conferência do [Kanban público](https://github.com/users/hoddy23/projects/1/views/1) em 03/11/2026, os cartões abaixo apresentaram critérios adicionais à proposta aprovada pelo solicitante. As descrições citam a proposta v7 e status de 27/10/2026; o PDF disponível na implementação não detalhava esses requisitos. É necessário definir qual escopo será cobrado e refletir a decisão no DRE e no quadro.
+Na conferência do [Kanban público](https://github.com/users/hoddy23/projects/1/views/1) em 03/11/2026, foram identificados critérios adicionais que não constavam no PDF disponível. O solicitante aprovou sua implementação e confirmou os pesos iniciais de 40% / 30% / 30%, configuráveis. A migração `schema-release4-cs.sql` acrescenta os fluxos abaixo sem apagar o checklist e os indicadores existentes.
 
-| Requisito | Implementação atual | Critérios adicionais descritos no cartão |
+| Requisito | Base mantida | Complemento implementado |
 |---|---|---|
 | RFC14 | Checklist derivado de cadastro, documentação, passaporte e curadoria | Diagnóstico/verificação/dossiê, acompanhamento de dossiês parados há mais de 10 dias e registro de desistência |
 | RFC15 | Pontuação derivada de eventos, pesos/faixas configuráveis e histórico das regras | Plano de recuperação e referência aos pesos do Plano de CS |
 | RF03 | Base agregada por perfil/coorte, atividade, pontuação e faixas | Ações, conferências aprovadas, disputas por motivo e tempo até publicação no relatório de saúde |
 
-Os critérios adicionais não estão cobertos integralmente pela implementação atual nem pelos 283 testes aprovados. A métrica B3 existente em Growth mede tempo até o passaporte; ela não equivale à consolidação desses critérios no RF03. Se o grupo mantiver a proposta aprovada, precisa registrar a revisão de escopo. Se adotar os critérios adicionais, será necessária implementação e nova validação antes de declarar esses itens concluídos.
+A suíte `cs.test.js` valida esse complemento. Os 283 testes da execução anterior são evidência histórica da versão anterior; a execução atual consta em `VALIDACAO_RELEASE4.md`. A métrica B3 de Growth continua medindo tempo até o passaporte; o RF03 possui uma medida própria de tempo até publicação.
 
-O quadro também mantém consignação, parcerias e outras funcionalidades já implementadas como **A fazer**. O status importado não representa a situação atual do código; atualizar os cartões deve incluir evidências e os limites acima, sem marcar automaticamente todos como concluídos.
+O quadro também mantém consignação, parcerias e outras funcionalidades já implementadas como **A fazer**. O grupo deve atualizar os cartões com as evidências e as regras deste documento; o status importado não representa a situação atual do código nem comprova homologação.
 
 ## Demonstração de consignação (administrador)
 
@@ -51,6 +51,16 @@ As condições são registradas como acordo comercial. Despesas efetivas com par
 
 **RFC14 — Vendedor → Primeiros passos:** cada peça tem quatro etapas verificadas automaticamente: cadastro, documentação (fotografia + laudo + nota fiscal), emissão de passaporte e aprovação da curadoria. Cada etapa vale 25% do progresso. O vendedor vê as pendências e os links para revisar o cadastro, consultar laudos e configurar lembretes. A emissão e a inclusão dos documentos do passaporte continuam sendo responsabilidade do perito. Uma peça privada pode permanecer no acervo sem ser anunciada; o onboarding não a publica automaticamente.
 
+**RFC14 — Dossiês de onboarding (vendedor e administrador):** para uma peça ainda não publicada, abra um dossiê com diagnóstico e descrição da procedência, documentação reunida e pendências. O fluxo tem seis etapas: diagnóstico → verificação → dossiê → perícia → curadoria → publicação. O administrador valida os avanços com justificativa; o vendedor acompanha somente suas peças. A verificação é uma conferência registrada pelo administrador, sem integração com serviços externos de identificação.
+
+- Para chegar à perícia, exige descrição da documentação e fotografia da peça. Para chegar à curadoria, exige laudo pericial e passaporte válido existentes no banco.
+- A publicação na curadoria conclui o dossiê na mesma transação do banco. Não existe botão para declarar uma publicação que não ocorreu. Peças privadas continuam exigindo autorização do vendedor para anunciar. Peças anteriores sem dossiê mantêm o fluxo existente.
+- Dossiês ativos sem mudança de etapa há **mais de dez dias corridos** ficam destacados e podem ser filtrados. Editar texto não reinicia esse prazo; avançar ou retomar reinicia.
+- Vendedor ou administrador pode registrar desistência com motivo, desde que não exista negociação ativa. O dossiê continua consultável e bloqueia a publicação enquanto desistido. A retomada volta à etapa anterior, mantendo o motivo antigo no histórico.
+- Edição dos dados somente antes da perícia e enquanto ativo. Dossiê publicado não pode ser alterado ou desistido. Toda alteração registra autor, data, observação e versões; não há exclusão física pela aplicação.
+
+Para demonstrar: abra **Dossiês de onboarding**, crie um dossiê, edite e consulte o histórico, registre desistência e retomada; como administrador, avance as etapas. Emita laudo e passaporte como perito e conclua pela curadoria. A suíte automatizada simula a passagem de onze dias somente sobre registros E2E para demonstrar o filtro de parados.
+
 **RFC15 — Meu Health Score:** o próprio comprador, vendedor ou perito vê a pontuação nos últimos 30 dias, de 0 a 100, e os sinais que a compõem. Configuração inicial: até 40 pontos por dias com login (40 × mínimo(dias/3, 1)); 30 por uso de passaporte ou laudo; 30 por uso do fluxo principal. Os sinais são eventos reais, não caixas marcadas manualmente.
 
 - Uso de passaporte: consulta, emissão ou atualização do passaporte; consulta ou assinatura de laudo.
@@ -62,6 +72,18 @@ As condições são registradas como acordo comercial. Despesas efetivas com par
 **RF03 — Administrador → Saúde da base:** consulta por período (até 366 dias), perfil e coorte (mês do cadastro), com total de contas, contas com login, média e distribuição por perfil/faixa. Períodos usam o horário de Brasília e incluem ambos os extremos. Contas sem eventos contam com pontuação zero; uma seleção sem contas exibe média sem base. Administradores não entram na base de clientes. O relatório só devolve agregados, mantendo a restrição do RNF06 sobre eventos individuais.
 
 O administrador ajusta pesos (soma obrigatória de 100), meta de dias e limites das faixas com justificativa. As versões ficam no histórico. Uma consulta recalcula o período com a regra **vigente**, não simula um snapshot histórico da regra antiga. Os parâmetros iniciais acima concretizam a proposta de implementação aprovada pelo solicitante para RFC14/RFC15/RF03. A fórmula e os parâmetros devem constar na atualização do DRE.
+
+**RFC15 — Planos de recuperação:** em Saúde da base, abra o acompanhamento e cadastre cliente, administrador responsável, objetivo e prazo. Há no máximo um plano ativo por cliente. Adicione ações com descrição e prazo dentro do prazo do plano; ambos devem ser hoje ou futuros no cadastro. O administrador pode revisar registros abertos, preservando versões. O cliente vê somente o próprio plano e pode iniciar/concluir ações com resultado; somente administradores cadastram, editam, cancelam ou encerram planos.
+
+Para concluir o plano, exige ao menos uma ação concluída e nenhuma ação aberta. Cancelar exige motivo e cancela as ações abertas na mesma transação, preservando todas no histórico. Registros encerrados não permitem novas alterações; é possível abrir outro plano. Ações vencidas são destacadas. O plano não altera artificialmente a pontuação de saúde: os eventos reais continuam sendo a fonte do cálculo.
+
+**RF03 — Acompanhamento e resultados:** os mesmos filtros de período, perfil e coorte selecionam a base de clientes dos indicadores adicionais:
+
+- Planos, ações e dossiês: selecionados pela data de criação, agrupados pela situação atual. Dossiês parados e ações atrasadas são avaliados no momento da consulta.
+- Conferências: selecionadas pela data da conferência. Cada transação conta uma vez, mesmo quando comprador e vendedor pertencem à base selecionada. Aprovadas são as vendas confirmadas atualmente; o painel separa aprovadas sem disputa e conferências que tiveram contestação, inclusive após resolução.
+- Disputas por motivo: categorias autenticidade, conservação, documentação, entrega e outro. O relatório nunca devolve justificativas livres, nomes ou histórico individual. Disputas legadas ficam em outro, sem inferir categoria pelo texto.
+- Tempo até publicação: média de dias entre cadastro da peça e primeira publicação registrada. Republicar não reinicia a contagem. A migração aproveita o primeiro evento de publicação existente; na ausência dele, usa a data legada da peça e identifica esses registros no total. Sem evidência temporal válida, a peça não entra na média. A medida legada pode refletir uma republicação anterior à migração e não prova a data original.
+- Sem base, médias e taxas permanecem nulas e a interface exibe “Sem base”. Planos e dossiês individuais só ficam disponíveis nas telas operacionais aos participantes autorizados; o relatório permanece agregado.
 
 A coleção privada existente mantém cadastro/importação, manutenção e pedido de passaporte. Por decisão expressa do solicitante, a revenda de peças adquiridas fica fora do escopo desta release e será tratada posteriormente.
 
@@ -81,8 +103,8 @@ O link do e-mail preserva a página de destino e a origem do acesso ao passar pe
 |---|---|---|
 | RFC08 | Administrador → Consignação; entrada, ordem, condições, devolução e venda | `consignacoes.test.js` |
 | RFC09 | Administrador → Parcerias; cadastro, filtros, edição e encerramento | `parcerias.test.js` |
-| RFC14 | Vendedor → Primeiros passos; etapas derivadas dos registros reais | `clientes.test.js` |
-| RFC15 / RF03 | Meu Health Score; administrador → Saúde da base e regras com histórico | `clientes.test.js` |
+| RFC14 | Primeiros passos e Dossiês; seis etapas, parados, desistência e publicação | `clientes.test.js`, `cs.test.js` |
+| RFC15 / RF03 | Health Score, planos e ações de recuperação, indicadores operacionais | `clientes.test.js`, `cs.test.js` |
 | RF01, RF02, RFC11 | Administrador → Relatórios e financeiro; período, subtotais, comissão, receitas, despesas e contas | `relatorios.test.js` |
 | RFC23 / RNF05 | Comprador → Minha coleção; cadastro/importação, manutenção, histórico e exportação | `habito.test.js` |
 | RFC24 | Avaliações após venda concluída; reputação e moderação justificada | `habito.test.js` |
@@ -98,6 +120,7 @@ Leia [Implantação e contingência](IMPLANTACAO.md) para preparar o ambiente. N
 ```powershell
 npx mocha tests/e2e/consignacoes.test.js
 npx mocha tests/e2e/parcerias.test.js
+npx mocha tests/e2e/cs.test.js
 npm run test:e2e:release4
 # Regressão cumulativa completa
 npm run test:e2e
@@ -105,7 +128,7 @@ npm run test:e2e
 
 Para mostrar o navegador ao professor, defina `$env:E2E_HEADLESS = 'false'` no terminal antes de executar. Os testes criam registros E2E e os removem ao final no ambiente de desenvolvimento. Não execute as suítes em paralelo nem contra produção.
 
-Resultado da regressão final em 03/11/2026: **283 testes aprovados, zero falhas e zero ignorados**. Veja a [evidência da execução por arquivo](VALIDACAO_RELEASE4.md).
+Veja os resultados e a revisão validada na [evidência da execução por arquivo](VALIDACAO_RELEASE4.md).
 
 ## Fechamento acadêmico
 

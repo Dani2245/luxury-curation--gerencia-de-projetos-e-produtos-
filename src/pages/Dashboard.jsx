@@ -77,6 +77,8 @@ const Dashboard = () => {
           <Link to="/dashboard/laudos" className={linkClass}>Laudos periciais</Link>
           <Link to="/dashboard/indicacoes" className={linkClass}>Indicações</Link>
           <Link to="/dashboard/saude" className={linkClass}>{user.perfil==='Administrador'?'Saúde da base':'Meu Health Score'}</Link>
+          {['Administrador','Vendedor'].includes(user.perfil)&&<Link to="/dashboard/dossies" className={linkClass}>Dossiês de onboarding</Link>}
+          <Link to="/dashboard/recuperacao" className={linkClass}>Planos de recuperação</Link>
           {user.perfil==='Vendedor'&&<Link to="/dashboard/onboarding" className={linkClass}>Primeiros passos</Link>}
           {user.perfil === 'Comprador' && <Link to="/dashboard/colecao" className={linkClass}>Minha coleção</Link>}
           {user.perfil !== 'Perito' && <Link to="/dashboard/avaliacoes" className={linkClass}>Avaliações</Link>}

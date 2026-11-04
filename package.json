@@ -10,7 +10,7 @@
     "preview": "vite preview",
     "test:e2e": "mocha \"tests/e2e/**/*.test.js\"",
     "test:e2e:release3": "mocha tests/e2e/categorias.test.js tests/e2e/laudos.test.js tests/e2e/release3-growth.test.js",
-    "test:e2e:release4": "mocha tests/e2e/consignacoes.test.js tests/e2e/parcerias.test.js tests/e2e/clientes.test.js tests/e2e/email.test.js tests/e2e/relatorios.test.js tests/e2e/growth.test.js tests/e2e/habito.test.js tests/e2e/alertas.test.js tests/e2e/conservacao.test.js",
+    "test:e2e:release4": "mocha tests/e2e/consignacoes.test.js tests/e2e/parcerias.test.js tests/e2e/clientes.test.js tests/e2e/cs.test.js tests/e2e/email.test.js tests/e2e/relatorios.test.js tests/e2e/growth.test.js tests/e2e/habito.test.js tests/e2e/alertas.test.js tests/e2e/conservacao.test.js",
     "test:e2e:essenciais": "mocha tests/e2e/custodias.test.js tests/e2e/relatorios.test.js tests/e2e/entregas.test.js tests/e2e/prazos.test.js tests/e2e/transacoes.test.js"
   },
   "dependencies": {

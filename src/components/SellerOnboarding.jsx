@@ -30,6 +30,7 @@ export default function SellerOnboarding() {
         ))}
       </ol>
       <div className="flex gap-4 flex-wrap mb-6">
+        <Link className={buttonClass} to="/dashboard/dossies">Acompanhar dossiês e etapas</Link>
         <Link className={buttonClass} to="/dashboard/nova-peca">
           Cadastrar peça
         </Link>

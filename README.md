@@ -39,7 +39,8 @@ A luxurious, high-end web application for curating rare art, iconic objects, and
    - `schema-release3-growth.sql` (pilotos X1–X5, evidências, exemplo público e A4);
    - `schema-release4.sql` (consignação, baixa integrada à venda e parcerias);
    - `schema-release4-clientes.sql` (onboarding, Health Score configurável e saúde agregada da base);
-   - `schema-release4-email.sql` (fila opcional de e-mail dos alertas).
+   - `schema-release4-email.sql` (fila opcional de e-mail dos alertas);
+   - `schema-release4-cs.sql` (dossiês, planos de recuperação e indicadores operacionais do RF03).
 
    Em um projeto existente que já recebeu as migrações de listas e alertas, aplique apenas os scripts seguintes a elas, na ordem acima. Eles são aditivos e podem ser reaplicados. Não recrie o banco nem reaplique o seed para atualizar o projeto. Vendas históricas confirmadas continuam concluídas; a migração não inventa pagamentos ou lançamentos financeiros retroativos.
 3. Inicie a API e o frontend:
@@ -55,7 +56,7 @@ A luxurious, high-end web application for curating rare art, iconic objects, and
 
 O frontend usa `VITE_API_URL` (padrão `http://localhost:3000`) e o backend aceita as origens de `FRONTEND_URL` (padrão `http://localhost:5173`) no CORS.
 
-Para a release 4, consulte o [roteiro e regras](docs/RELEASE4.md), o [manual de instalação, publicação e contingência](docs/IMPLANTACAO.md) e a [validação completa: 283 testes aprovados](docs/VALIDACAO_RELEASE4.md). Durante apresentação e Selenium, use `npm start` no backend para evitar reinicializações automáticas.
+Para a release 4, consulte o [roteiro e regras](docs/RELEASE4.md), o [manual de instalação, publicação e contingência](docs/IMPLANTACAO.md) e a [evidência da validação](docs/VALIDACAO_RELEASE4.md). Durante apresentação e Selenium, use `npm start` no backend para evitar reinicializações automáticas.
 
 Usuários de teste criados pelo seed (senha de desenvolvimento em `backend/database/seed.sql`): `admin@`, `vendedor@`, `comprador@` e `perito@lastro.com`.
 

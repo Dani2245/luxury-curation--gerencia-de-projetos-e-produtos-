@@ -4,7 +4,7 @@
 
 Use Node.js 22.12 ou superior, npm, Chrome e um projeto Supabase de desenvolvimento. Na raiz, execute `npm ci`; em `backend`, execute `npm ci`. Copie `backend/.env.example` para `backend/.env` e preencha a URL e a chave pública do projeto. Não use `service_role` no frontend ou nos testes.
 
-As migrações estão ordenadas no README. Em um ambiente existente, aplique somente as que faltam. A atualização da release 3 para a 4 começa em `backend/database/schema-release4.sql`. Não execute `seed.sql` novamente: ele é exclusivo da preparação do ambiente de demonstração. O arquivo `test-support.sql` deve ser instalado apenas nesse ambiente, atualizado para limpar também consignações e parcerias E2E.
+As migrações estão ordenadas no README. Em um ambiente existente, aplique somente as que faltam. A atualização da release 3 para a 4 segue `schema-release4.sql` → `schema-release4-clientes.sql` → `schema-release4-email.sql` → `schema-release4-cs.sql`, todos em `backend/database`. A última migração complementa os critérios do Kanban e deve ser aplicada antes de usar as rotas `/api/cs`. Não execute `seed.sql` novamente: ele é exclusivo da preparação do ambiente de demonstração. O arquivo `test-support.sql` deve ser instalado apenas nesse ambiente, atualizado para limpar consignações, parcerias, dossiês e planos E2E. A função `e2e_datar_cs` permite testar dossiês parados e duração até publicação somente em peças com prefixo E2E e por administrador.
 
 Abra dois terminais:
 

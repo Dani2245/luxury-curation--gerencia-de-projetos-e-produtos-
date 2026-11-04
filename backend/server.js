@@ -53,6 +53,7 @@ app.use('/api/custodias', custodiasRoutes);
 app.use('/api/consignacoes', require('./routes/consignacoes.routes'));
 app.use('/api/parcerias', require('./routes/parcerias.routes'));
 app.use('/api/clientes', require('./routes/clientes.routes'));
+app.use('/api/cs', require('./routes/cs.routes'));
 app.use('/api/relatorios', financeiroRoutes);
 app.use('/api/lista-espera', listaEsperaRoutes);
 app.use('/api/indicacoes', indicacoesRoutes);
