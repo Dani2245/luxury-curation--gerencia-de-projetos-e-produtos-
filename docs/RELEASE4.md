@@ -19,7 +19,7 @@ Na conferência do [Kanban público](https://github.com/users/hoddy23/projects/1
 | Requisito | Base mantida | Complemento implementado |
 |---|---|---|
 | RFC14 | Checklist derivado de cadastro, documentação, passaporte e curadoria | Diagnóstico/verificação/dossiê, acompanhamento de dossiês parados há mais de 10 dias e registro de desistência |
-| RFC15 | Pontuação derivada de eventos, pesos/faixas configuráveis e histórico das regras | Plano de recuperação e referência aos pesos do Plano de CS |
+| RFC15 | Pontuação derivada de eventos, pesos/faixas configuráveis e histórico das regras | Planos de recuperação com ações, responsáveis e prazos; pesos 40/30/30 confirmados pelo solicitante |
 | RF03 | Base agregada por perfil/coorte, atividade, pontuação e faixas | Ações, conferências aprovadas, disputas por motivo e tempo até publicação no relatório de saúde |
 
 A suíte `cs.test.js` valida esse complemento. Os 283 testes da execução anterior são evidência histórica da versão anterior; a execução atual consta em `VALIDACAO_RELEASE4.md`. A métrica B3 de Growth continua medindo tempo até o passaporte; o RF03 possui uma medida própria de tempo até publicação.
