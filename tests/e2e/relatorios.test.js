@@ -7,10 +7,11 @@ import { createDriver, loginAndWaitDashboard, open, fill, select, clickButton, c
 const { By, until } = webdriver;
 const prefix = `E2E Relatorios ${Date.now()}`;
 const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' }).format(new Date());
-const period = `dataInicial=${today}&dataFinal=${today}`;
+// Preserva o início para comparar baselines e inclui operações criadas após a virada do dia.
+const period = () => `dataInicial=${today}&dataFinal=${new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' }).format(new Date())}`;
 const historical = 'dataInicial=2001-01-01&dataFinal=2001-01-31';
 const cents = (v) => Math.round(Number(v) * 100);
-const report = async (kind, query = period) => {
+const report = async (kind, query = period()) => {
   const r = await requestAs(USERS.admin, `/relatorios/${kind}?${query}`);
   assert.equal(r.status, 200, r.data?.message); return r.data;
 };
@@ -31,8 +32,8 @@ describe('RF01, RF02 e RFC11 - Relatórios e contas', function () {
 
   it('restringe os relatórios e lançamentos a administradores', async () => {
     for (const user of [USERS.comprador, USERS.vendedor, USERS.perito]) {
-      assert.equal((await requestAs(user, `/relatorios/transacoes?${period}`)).status, 403);
-      assert.equal((await requestAs(user, `/relatorios/financeiro?${period}`)).status, 403);
+      assert.equal((await requestAs(user, `/relatorios/transacoes?${period()}`)).status, 403);
+      assert.equal((await requestAs(user, `/relatorios/financeiro?${period()}`)).status, 403);
       assert.equal((await requestAs(user, '/relatorios/lancamentos', { method: 'POST', body: {} })).status, 403);
     }
   });
@@ -47,7 +48,7 @@ describe('RF01, RF02 e RFC11 - Relatórios e contas', function () {
     assert.equal(cents(r.vendasConcluidas) - cents(baseline.vendasConcluidas), 250020);
   });
   it('filtra categoria, situação e período sem confundir propostas com vendas concluídas', async () => {
-    const r = await report('transacoes', `${period}&categoria=${encodeURIComponent('relógio')}&status=confirmada`);
+    const r = await report('transacoes', `${period()}&categoria=${encodeURIComponent('relógio')}&status=confirmada`);
     assert.ok(r.grupos.every((g) => g.categoria === 'relógio' && g.transacoes.every((t) => t.status === 'confirmada')));
     assert.ok(r.grupos[0].transacoes.some((t) => t.id === sale.id));
     const other = await report('transacoes', historical);
@@ -60,7 +61,7 @@ describe('RF01, RF02 e RFC11 - Relatórios e contas', function () {
     assert.match(await driver.findElement(By.css('[data-testid="r-total"]')).getText(), /R\$/);
   });
   it('rejeita datas inválidas, período invertido e categorias desconhecidas', async () => {
-    for (const q of ['dataInicial=2026-02-31&dataFinal=2026-03-01', 'dataInicial=2026-10-30&dataFinal=2026-10-01', `${period}&categoria=carro`]) {
+    for (const q of ['dataInicial=2026-02-31&dataFinal=2026-03-01', 'dataInicial=2026-10-30&dataFinal=2026-10-01', `${period()}&categoria=carro`]) {
       assert.equal((await requestAs(USERS.admin, `/relatorios/transacoes?${q}`)).status, 400);
     }
     assert.equal((await requestAs(USERS.admin, '/relatorios/financeiro')).status, 400);

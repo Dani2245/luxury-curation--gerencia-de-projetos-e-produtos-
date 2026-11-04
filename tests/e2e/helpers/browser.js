@@ -30,8 +30,8 @@ export const waitVisible = async (driver, locator) => {
   return element;
 };
 
-export const waitForText = (driver, text) =>
-  driver.wait(until.elementLocated(By.xpath(`//*[contains(normalize-space(.), "${text}")]`)), TIMEOUT, `Texto não encontrado: ${text}`);
+export const waitForText = (driver, text, timeout = TIMEOUT) =>
+  driver.wait(until.elementLocated(By.xpath(`//*[contains(normalize-space(.), "${text}")]`)), timeout, `Texto não encontrado: ${text}`);
 
 export const waitGone = (driver, text) =>
   driver.wait(async () => (await driver.findElements(By.xpath(`//*[contains(text(), "${text}")]`))).length === 0, TIMEOUT, `Texto ainda visível: ${text}`);

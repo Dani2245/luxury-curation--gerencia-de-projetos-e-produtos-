@@ -162,7 +162,8 @@ export const deleteAlertsApi = async (user) => {
 // Remove as peças criadas pelos testes (nome com o prefixo), inclusive vendidas, com transações e passaportes
 export const cleanupE2E = async (prefix = 'E2E ') => {
   if (!SUPABASE_URL || !SUPABASE_KEY) return;
-  const token = await loginApi(USERS.admin.email);
+  // A limpeza reutiliza a sessão válida de apoio; os cenários de login continuam sem cache.
+  const token = await fixtureToken(USERS.admin.email);
   const result = await fetch(`${SUPABASE_URL}/rest/v1/rpc/e2e_limpar_dados`, {
     method: 'POST',
     headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },

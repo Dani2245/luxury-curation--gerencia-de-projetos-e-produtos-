@@ -11,6 +11,7 @@ const { By, until } = webdriver;
 const stamp = Date.now();
 const prefix = `E2E Prazo ${stamp}`;
 const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' }).format(new Date());
+const currentDay = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' }).format(new Date());
 const DIA = 24 * 60 * 60 * 1000;
 const dataBR = (iso) => new Date(iso).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
 
@@ -226,7 +227,8 @@ describe('RFC12/RFC13 - Prazos da conferência e pagamentos retidos', function (
       await driver.wait(async () => (await driver.findElements(By.css(`[data-testid="pagamento-${atrasada.id}"]`))).length === 0, 10000,
         'o pagamento liberado não deve aparecer no filtro de retidos');
 
-      const liberados = await requestAs(USERS.admin, `/relatorios/pagamentos?dataInicial=${today}&dataFinal=${today}&status=liberado`);
+      // A suíte completa pode atravessar a meia-noite entre carregar o arquivo e criar pagamentos.
+      const liberados = await requestAs(USERS.admin, `/relatorios/pagamentos?dataInicial=${today}&dataFinal=${currentDay()}&status=liberado`);
       assert.equal(liberados.status, 200);
       assert.ok(liberados.data.pagamentos.some((p) => p.transacaoId === atrasada.id));
       assert.ok(liberados.data.pagamentos.every((p) => p.status === 'liberado'));

@@ -19,6 +19,18 @@ const as = async (driver, user) => {
   await loginAndWaitDashboard(driver, user.email);
 };
 
+const waitPassport = async (driver) => {
+  try {
+    // A consulta carrega documentos e registra o acesso no Supabase. Espera limitada, sem recarregar
+    // nem repetir a operação: a contagem de um acesso em 30 minutos continua sendo verificada.
+    await waitForText(driver, 'Assinatura válida', 20000);
+  } catch (error) {
+    const visible = await driver.findElement(By.css('body')).getText().catch(() => 'Página indisponível');
+    error.message += `\nEstado visível: ${visible.slice(-1200)}`;
+    throw error;
+  }
+};
+
 // Lê o resumo agregado do painel do administrador: { evento: { total, gatilho } }
 const readCounts = (driver) => driver.executeScript(`
   return Object.fromEntries([...document.querySelectorAll('[data-testid^="evento-"]')].map((row) => [
@@ -95,7 +107,7 @@ describe('RNF06 - Registro de eventos de uso', function () {
     for (const path of [`/p/${link.token}`, `/p/${link.token}?origem=qr`]) {
       await clearSession(driver);
       await open(driver, path);
-      await waitForText(driver, 'Assinatura válida');
+      await waitPassport(driver);
     }
 
     const after = await adminCounts(driver);
@@ -111,10 +123,10 @@ describe('RNF06 - Registro de eventos de uso', function () {
     await as(driver, USERS.comprador);
     for (let i = 0; i < 2; i += 1) {
       await open(driver, `/peca/${peca.id}/passaporte`);
-      await waitForText(driver, 'Assinatura válida');
+      await waitPassport(driver);
     }
     await driver.navigate().refresh();
-    await waitForText(driver, 'Assinatura válida');
+    await waitPassport(driver);
 
     const after = await adminCounts(driver);
     assert.equal(total(after, 'passaporte_consulta'), total(before, 'passaporte_consulta') + 1);
